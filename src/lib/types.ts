@@ -128,8 +128,9 @@ export interface FeedbackReply {
 }
 
 export interface Feedback {
-  feedbackId: string;
-  creator: {
+  _id?: string; // MongoDB ObjectId as string
+  feedbackId?: string; // Alternative ID field
+  creator?: {
     email: string;
     name?: string;
     youtubeChannel?: {
@@ -139,15 +140,28 @@ export interface Feedback {
     };
     youtubeChannelId?: string;
   };
+  creatorEmail?: string; // Direct creator email field
+  creatorName?: string; // Direct creator name field
+  creatorId?: string; // Creator ID field
+  avatar?: string; // Creator avatar
+  youtubeChannel?: any; // YouTube channel object
+  youtubeChannelId?: string; // YouTube channel ID
   rating: number;
   title: string;
-  tags: string[];
+  tags: string | string[]; // Can be string or array
   description: string;
   message?: string; // Optional message to admin
-  response: FeedbackReply[];
-  isReadByCreator: boolean;
-  timestamp: string;
+  response?: FeedbackReply[];
+  isReadByCreator?: boolean;
+  timestamp?: string;
+  createdAt?: string; // Alternative date field
   type: 'general' | 'disconnect-request';
+  status?: string; // Feedback status
+  creatorRead?: boolean; // Whether creator has read the reply
+  reply?: {
+    message: string;
+    repliedAt: string;
+  } | null;
 }
 
 

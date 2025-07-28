@@ -5,9 +5,8 @@ import * as React from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-// Temporary: import mock admin user for header
+
 const mockAdminUser = {
   displayName: "Admin User",
   avatar: "https://placehold.co/128x128.png",
@@ -25,39 +24,31 @@ export default function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-    const { data: session } = useSession();
-    const router = useRouter();
-    const [showPopup, setShowPopup] = React.useState(false);
+  const router = useRouter();
+  const [showPopup, setShowPopup] = React.useState(false);
 
-    React.useEffect(() => {
-      if (session?.user?.email && !ADMIN_EMAILS.includes(session.user.email)) {
-        setShowPopup(true);
-        setTimeout(() => {
-          setShowPopup(false);
-          router.replace('/dashboard/overview');
-        }, 3000);
-      }
-    }, [session, router]);
+  // Optionally, you can keep the popup logic if you want to show a message for non-admins
+  // But do NOT check localStorage or tokens here. Middleware will handle protection.
 
-    return (
-      <AdminProfileProvider>
-        <SidebarProvider>
-          <AdminSidebar />
-          <SidebarInset>
-            <DashboardHeader title="Admin Dashboard" admin={true} />
-            <main className="p-4 md:p-6">
-                {showPopup && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-                    <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-                      <h2 className="text-xl font-bold mb-2">Access Denied</h2>
-                      <p className="mb-4">You do not have access to become an admin.<br/>We are redirecting you to the creator dashboard in 3 seconds.</p>
-                    </div>
-                  </div>
-                )}
-                {children}
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
-      </AdminProfileProvider>
-    );
+  return (
+    <AdminProfileProvider>
+      <SidebarProvider>
+        <AdminSidebar />
+        <SidebarInset>
+          <DashboardHeader title="Admin Dashboard" admin={true} />
+          <main className="p-4 md:p-6">
+            {showPopup && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+                  <h2 className="text-xl font-bold mb-2">Access Denied</h2>
+                  <p className="mb-4">You do not have access to become an admin.<br/>We are redirecting you to the creator dashboard in 3 seconds.</p>
+                </div>
+              </div>
+            )}
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </AdminProfileProvider>
+  );
 }

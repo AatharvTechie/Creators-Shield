@@ -14,5 +14,6 @@ export async function GET(req) {
     email: user.email,
     youtubeChannelId: user.youtubeChannelId,
     youtubeChannel: user.youtubeChannel,
+    disconnectApproved: user.disconnectApproved, // Add this line
   });
 }

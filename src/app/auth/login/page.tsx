@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { SuspensionDialog } from "@/components/ui/suspension-dialog";
+import { DeactivationDialog } from "@/components/ui/deactivation-dialog";
+import { ReactivationPendingDialog } from "@/components/ui/reactivation-pending-dialog";
 import Image from "next/image";
 
 export default function LoginPage() {
@@ -11,6 +14,25 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showSuspensionDialog, setShowSuspensionDialog] = useState(false);
+  const [showDeactivationDialog, setShowDeactivationDialog] = useState(false);
+  const [showReactivationPendingDialog, setShowReactivationPendingDialog] = useState(false);
+  const [suspensionData, setSuspensionData] = useState({
+    timeRemaining: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
+  const [deactivationData, setDeactivationData] = useState({
+    hasReactivationRequest: false,
+    reactivationStatus: 'none'
+  });
+  const [reactivationPendingData, setReactivationPendingData] = useState({
+    timeRemaining: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -27,14 +49,16 @@ export default function LoginPage() {
     });
     const data = await res.json();
     setLoading(false);
+    
     if (data.token) {
-      // Store JWT in localStorage or cookie
+      // Store JWT in localStorage for backward compatibility
       localStorage.setItem("creator_jwt", data.token);
+      
       // Post-auth redirect logic
       const postAuthRedirect = typeof window !== 'undefined' ? localStorage.getItem('postAuthRedirect') : null;
       if (postAuthRedirect) {
         localStorage.removeItem('postAuthRedirect');
-        router.push(postAuthRedirect); // Redirect to intended page after login
+        router.push(postAuthRedirect);
       } else if (data.user && data.user.role === 'admin') {
         router.push("/admin");
       } else if (
@@ -50,8 +74,43 @@ export default function LoginPage() {
         // User with any plan (free, monthly, yearly): go to dashboard
         router.push("/dashboard/overview");
       }
+    } else if (data.error === 'Account Suspended') {
+      // Show suspension dialog
+      console.log('🔍 Suspension data received:', data);
+      setSuspensionData({
+        timeRemaining: data.timeRemaining || 0,
+        hours: data.hours || 0,
+        minutes: data.minutes || 0,
+        seconds: data.seconds || 0
+      });
+      console.log('📝 Set suspension data:', {
+        timeRemaining: data.timeRemaining || 0,
+        hours: data.hours || 0,
+        minutes: data.minutes || 0,
+        seconds: data.seconds || 0
+      });
+      setShowSuspensionDialog(true);
+      setError(""); // Clear any previous error
+    } else if (data.error === 'Account Reactivation Pending') {
+      // Show reactivation pending dialog
+      setReactivationPendingData({
+        timeRemaining: data.timeRemaining || 0,
+        hours: data.hours || 0,
+        minutes: data.minutes || 0,
+        seconds: data.seconds || 0
+      });
+      setShowReactivationPendingDialog(true);
+      setError(""); // Clear any previous error
+    } else if (data.error === 'Account Deactivated') {
+      // Show deactivation dialog
+      setDeactivationData({
+        hasReactivationRequest: data.hasReactivationRequest || false,
+        reactivationStatus: data.reactivationStatus || 'none'
+      });
+      setShowDeactivationDialog(true);
+      setError(""); // Clear any previous error
     } else {
-      setError(data.error || "Login failed");
+      setError(data.message || data.error || "Login failed");
     }
   };
 
@@ -111,6 +170,31 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      
+      <SuspensionDialog
+        isOpen={showSuspensionDialog}
+        onClose={() => setShowSuspensionDialog(false)}
+        timeRemaining={suspensionData.timeRemaining}
+        hours={suspensionData.hours}
+        minutes={suspensionData.minutes}
+        seconds={suspensionData.seconds}
+      />
+      
+      <DeactivationDialog
+        isOpen={showDeactivationDialog}
+        onClose={() => setShowDeactivationDialog(false)}
+        hasReactivationRequest={deactivationData.hasReactivationRequest}
+        reactivationStatus={deactivationData.reactivationStatus}
+      />
+      
+      <ReactivationPendingDialog
+        isOpen={showReactivationPendingDialog}
+        onClose={() => setShowReactivationPendingDialog(false)}
+        timeRemaining={reactivationPendingData.timeRemaining}
+        hours={reactivationPendingData.hours}
+        minutes={reactivationPendingData.minutes}
+        seconds={reactivationPendingData.seconds}
+      />
     </div>
   );
 }

@@ -4,9 +4,9 @@
 import * as React from 'react';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
 import { useDashboardData } from '@/app/dashboard/dashboard-context';
 import { useAdminProfile } from '@/app/admin/profile-context';
 
@@ -47,12 +47,33 @@ export function DashboardHeader({ title, admin = false }: { title?: string, admi
     }
   }, [avatar]);
 
-  const handleSignOut = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('creator_jwt');
+  const handleSignOut = async () => {
+    try {
+      // Call logout API to clear cookies
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Clear localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('creator_jwt');
+        localStorage.removeItem('admin_jwt');
+      }
+      
+      // Redirect to login
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still redirect even if API call fails
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('creator_jwt');
+        localStorage.removeItem('admin_jwt');
+      }
+      router.push('/auth/login');
     }
-    signOut({ redirect: false });
-    router.push('/auth/login');
   };
 
   return (
@@ -70,6 +91,17 @@ export function DashboardHeader({ title, admin = false }: { title?: string, admi
         <h1 className="text-xl font-semibold transition-all duration-300">{title || (admin ? 'Admin Dashboard' : 'Creator Dashboard')}</h1>
       )}
       <div className="flex-1" />
+      
+      {/* Logout Button */}
+      <Button
+        onClick={handleSignOut}
+        variant="ghost"
+        size="sm"
+        className="flex items-center gap-2 text-gray-600 hover:text-red-600 hover:bg-red-50"
+      >
+        <LogOut className="h-4 w-4" />
+        <span className="hidden sm:inline">Logout</span>
+      </Button>
     </header>
   );
 }

@@ -112,10 +112,26 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
   const [audioUrl, setAudioUrl] = React.useState('');
   const [videoUrl, setVideoUrl] = React.useState('');
   const [scanStatus, setScanStatus] = React.useState<'idle' | 'initializing' | 'scanning'>('idle');
+  const [matchThreshold, setMatchThreshold] = React.useState<number>(85); // Default threshold
   const { data: session } = useSession();
 
-
   const { toast } = useToast();
+
+  // Fetch platform settings for match threshold
+  React.useEffect(() => {
+    async function fetchThreshold() {
+      try {
+        const res = await fetch('/api/settings/platform');
+        if (res.ok) {
+          const data = await res.json();
+          setMatchThreshold(data.matchThreshold || 85);
+        }
+      } catch (err) {
+        console.error('Failed to fetch match threshold:', err);
+      }
+    }
+    fetchThreshold();
+  }, []);
 
   // Clean up preview URLs to avoid memory leaks
   React.useEffect(() => {
@@ -476,7 +492,19 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
       
       {report && (
         <Card>
-            <CardHeader><CardTitle>Scan Result</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Scan Result</CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${(report.matchScore ?? 0) * 100 >= matchThreshold ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                  <span className="text-sm font-medium">
+                    {(report.matchScore ?? 0) * 100 >= matchThreshold 
+                      ? 'Potential Violation' 
+                      : 'No Violation'}
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
             <CardContent className="space-y-6">
                 {report.matchFound ? (
                     <>
@@ -517,6 +545,25 @@ export function MonitoringClient({ initialHistory, defaultUrl = '', defaultTitle
                              </TooltipTrigger><TooltipContent>
                                 <p>Based on AI analysis (cosine similarity for text, hash comparison for media).</p>
                              </TooltipContent></Tooltip></TooltipProvider>
+                        </div>
+                        <div className="space-y-2">
+                             <Label>Match Score: {Math.round((report.matchScore ?? 0) * 100)}% (Threshold: {matchThreshold}%)</Label>
+                             <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                                <Progress 
+                                  value={(report.matchScore ?? 0) * 100} 
+                                  className={`w-full ${(report.matchScore ?? 0) * 100 >= matchThreshold ? 'bg-green-200' : 'bg-gray-200'}`}
+                                />
+                             </TooltipTrigger><TooltipContent>
+                                <p>Content will be flagged as a potential violation if the match score is above {matchThreshold}%.</p>
+                             </TooltipContent></Tooltip></TooltipProvider>
+                             <div className="flex items-center gap-2 mt-2">
+                                <div className={`w-3 h-3 rounded-full ${(report.matchScore ?? 0) * 100 >= matchThreshold ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                                <span className="text-sm font-medium">
+                                  {(report.matchScore ?? 0) * 100 >= matchThreshold 
+                                    ? 'Potential copyright violation detected' 
+                                    : 'No significant match found'}
+                                </span>
+                             </div>
                         </div>
                         <p className="text-sm text-muted-foreground">{report.infringementReport}</p>
                         <div className="flex gap-2 justify-end border-t pt-4">

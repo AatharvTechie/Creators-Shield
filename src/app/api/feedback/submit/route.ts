@@ -4,29 +4,64 @@ import Creator from '@/models/Creator.js';
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
+  try {
   await connectToDatabase();
   const data = await req.json();
+    console.log('Submit API - Received data:', data);
+    
   const { creatorEmail, creatorName, ...feedbackData } = data;
   if (!creatorEmail) {
+      console.log('Submit API - Missing creatorEmail');
     return NextResponse.json({ success: false, message: 'Missing creatorEmail' }, { status: 400 });
   }
+    
   // Find creator by email
   const creator = await Creator.findOne({ email: creatorEmail });
+    console.log('Submit API - Found creator:', !!creator);
+    
   if (!creator) {
+      console.log('Submit API - Creator not found for email:', creatorEmail);
     return NextResponse.json({ success: false, message: 'Creator not found' }, { status: 404 });
   }
+    
   try {
     // Always push feedback to the creator's feedbacks array
     let feedbackDoc = await Feedback.findOne({ creatorId: creator._id });
+      console.log('Submit API - Found existing feedback doc:', !!feedbackDoc);
+      
     if (!feedbackDoc) {
       // Create new feedback doc for this creator
       feedbackDoc = new Feedback({ creatorId: creator._id, feedbacks: [] });
-    }
+        console.log('Submit API - Created new feedback doc');
+      } else {
+        // Clean up any existing feedbacks with invalid status values
+        let hasChanges = false;
+        feedbackDoc.feedbacks = feedbackDoc.feedbacks.map(fb => {
+          if (fb.status === 'admin read') {
+            fb.status = 'admin_read';
+            hasChanges = true;
+            console.log('Submit API - Fixed invalid status from "admin read" to "admin_read"');
+          }
+          return fb;
+        });
+        
+        if (hasChanges) {
+          await feedbackDoc.save();
+          console.log('Submit API - Saved cleaned up feedback doc');
+        }
+      }
+      
     feedbackDoc.feedbacks.push({ ...feedbackData, creatorName, createdAt: new Date() });
     await feedbackDoc.save();
+      console.log('Submit API - Feedback saved successfully');
+      
     return NextResponse.json({ success: true, feedback: feedbackDoc });
+    } catch (err) {
+      console.error('Submit API - Feedback save error:', err);
+      return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    }
   } catch (err) {
-    console.error('Feedback save error:', err);
-    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    console.error('Submit API - General error:', err);
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
   }
 } 

@@ -179,7 +179,12 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
           <div className="flex items-center justify-between p-4 border border-yellow-200/50 rounded-lg bg-yellow-50/10 dark:bg-yellow-500/10">
             <div>
               <h3 className="font-semibold">Suspend Creator</h3>
-              <p className="text-sm text-muted-foreground">Temporarily disable account for 24 hours.</p>
+              <p className="text-sm text-muted-foreground">
+                {user.status === 'suspended' 
+                  ? 'Creator is currently suspended and cannot login for 24 hours from suspension time.'
+                  : 'Temporarily disable account for 24 hours. Creator will see a warning dialog with countdown timer when trying to login.'
+                }
+              </p>
             </div>
             {user.status === 'suspended' ? (
                 <Button variant="outline" onClick={() => handleAction('lift')} disabled={isLoading === 'lift'}>
@@ -189,7 +194,7 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
             ) : (
                 <Button variant="outline" onClick={() => handleAction('suspend')} disabled={isLoading === 'suspend' || user.status === 'deactivated'}>
                     {isLoading === 'suspend' ? <Loader2 className="mr-2 animate-spin" /> : <ShieldBan className="mr-2" />}
-                    Suspend
+                    Suspend for 24 Hours
                 </Button>
             )}
           </div>

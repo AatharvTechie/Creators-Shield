@@ -5,7 +5,7 @@ const adminSchema = new mongoose.Schema({
   email: { type: String, unique: true, required: true },
   password: { type: String, required: true }, // hashed password for admin
   location: { type: String, required: true },
-  avatar: { type: Buffer }, // profile picture image data
+  profilePhoto: { type: String }, // latest profile photo URL/path
   youtubeChannel: {
     id: String,
     title: String,
@@ -14,4 +14,4 @@ const adminSchema = new mongoose.Schema({
 });
 
 const Admin = (mongoose.models && mongoose.models.Admin) || mongoose.model('Admin', adminSchema);
-export default Admin; 
+export default Admin;   

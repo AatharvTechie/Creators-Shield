@@ -32,7 +32,18 @@ export function AdminSidebar() {
   const [hasNewFeedback, setHasNewFeedback] = React.useState(false);
 
   React.useEffect(() => {
-    hasUnrepliedAdminFeedback().then(setHasNewFeedback);
+    async function checkUnread() {
+      try {
+        const res = await fetch('/api/feedback/unread?role=admin');
+        const data = await res.json();
+        setHasNewFeedback(!!data.hasUnread);
+      } catch {
+        setHasNewFeedback(false);
+      }
+    }
+    checkUnread();
+    const interval = setInterval(checkUnread, 10000); // poll every 10s
+    return () => clearInterval(interval);
   }, [pathname]); // Re-check on navigation
 
   return (
@@ -54,6 +65,9 @@ export function AdminSidebar() {
               >
                 <Link href={item.href} className="pl-4 flex items-center gap-3">
                   <item.icon />
+                  {item.href === '/admin/feedback' && hasNewFeedback && (
+                    <span className="absolute -top-1 left-5 w-2 h-2 rounded-full bg-green-500 animate-pulse z-10" />
+                  )}
                   <span>{item.label}</span>
                 </Link>
               </SidebarMenuButton>

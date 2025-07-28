@@ -1,96 +1,171 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
+import { CheckCircle, XCircle, Eye, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Check, X, Loader2 } from "lucide-react";
-import { approveReactivationRequest, denyReactivationRequest } from './actions';
-import type { ReactivationRequest } from '@/lib/types';
-import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
+import { approveReactivationRequest, rejectReactivationRequest } from './actions';
 
-export function ReactivationRequestsClient({ initialRequests }: { initialRequests: ReactivationRequest[] }) {
+interface ReactivationRequest {
+  id: string;
+  name: string;
+  email: string;
+  requestedAt: Date | string;
+  reason: string;
+  explanation: string;
+  creatorId: string;
+}
+
+interface ReactivationRequestsClientProps {
+  initialRequests: ReactivationRequest[];
+}
+
+export function ReactivationRequestsClient({ initialRequests }: ReactivationRequestsClientProps) {
+  const [requests, setRequests] = useState(initialRequests);
+  const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
-  const [requests, setRequests] = useState<ReactivationRequest[]>(initialRequests);
-  const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-  const handleAction = async (action: 'approve' | 'deny', request: ReactivationRequest) => {
-    setLoadingAction(`${action}-${request.creatorId}`);
+  // Debug logging
+  console.log('Current requests state:', requests);
+  console.log('ReactivationRequestsClient received:', initialRequests);
+
+  const handleAction = async (requestId: string, action: 'approve' | 'reject') => {
+    setLoading(requestId);
     
-    const result = action === 'approve' 
-      ? await approveReactivationRequest(request.creatorId, request.email, request.displayName)
-      : await denyReactivationRequest(request.creatorId, request.email, request.displayName);
-    
-    if (result.success) {
+    try {
+      // Find the request to get creatorId
+      const request = requests.find(r => r.id === requestId);
+      console.log('🔍 Found request:', request);
+      
+      if (!request || !request.creatorId) {
+        console.error('❌ Creator ID not found:', { requestId, request });
+        throw new Error('Creator ID not found for this request');
+      }
+      
+      console.log('🔄 Processing action:', { action, requestId, creatorId: request.creatorId });
+      
+      const result = action === 'approve' 
+        ? await approveReactivationRequest(request.creatorId)
+        : await rejectReactivationRequest(request.creatorId);
+      
+      console.log('📊 Action result:', result);
+      
+      if (result.success) {
         toast({
-          title: "Action Successful",
-          description: result.message,
+          title: "Success", 
+          description: result.message 
         });
-        setRequests(prev => prev.filter(r => r.creatorId !== request.creatorId));
-    } else {
+        // Refresh the page to show updated data
+        window.location.reload();
+      } else {
         toast({
-            variant: 'destructive',
-            title: 'Action Failed',
-            description: result.message
+          title: "Error", 
+          description: result.message 
         });
+      }
+    } catch (error) {
+      console.error('❌ Action failed:', error);
+      toast({
+        title: "Error", 
+        description: "An error occurred while processing the request." 
+      });
+    } finally {
+      setLoading(null);
     }
-    
-    setLoadingAction(null);
+  };
+
+  const formatDate = (date: Date | string) => {
+    if (typeof date === 'string') {
+      return date;
+    }
+    if (date instanceof Date) {
+      return date.toISOString();
+    }
+    return new Date().toISOString(); // fallback
+  };
+
+  if (requests.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>No Reactivation Requests</CardTitle>
+          <CardDescription>
+            There are currently no pending reactivation requests.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            When creators submit reactivation requests, they will appear here for review.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <>
-      {requests.length > 0 ? (
-        <div className="space-y-4">
-          {requests.map((request) => (
-            <div key={request.creatorId} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-lg border p-4">
-              <div className="flex items-center gap-4">
-                <Avatar>
-                  <AvatarImage src={request.avatar} data-ai-hint="profile picture" />
-                  <AvatarFallback>{request.displayName?.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-medium">{request.displayName}</p>
-                  <p className="text-sm text-muted-foreground">{request.email}</p>
-                  <p className="text-sm text-muted-foreground sm:hidden mt-1">
-                      Requested on <ClientFormattedDate dateString={request.requestDate} />
-                  </p>
-                </div>
+    <div className="space-y-4">
+      {requests.map((request) => (
+        <Card key={request.id}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">{request.name}</CardTitle>
+                <CardDescription>{request.email}</CardDescription>
               </div>
-              <div className="flex items-center gap-4">
-                <p className="text-sm text-muted-foreground hidden sm:block">
-                  Requested on <ClientFormattedDate dateString={request.requestDate} />
-                </p>
-                <div className="flex justify-end gap-2 ml-auto">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAction('approve', request)}
-                    disabled={!!loadingAction}
-                  >
-                    {loadingAction === `approve-${request.creatorId}` ? <Loader2 className="animate-spin" /> : <Check />}
-                    Approve
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleAction('deny', request)}
-                    disabled={!!loadingAction}
-                  >
-                      {loadingAction === `deny-${request.creatorId}` ? <Loader2 className="animate-spin" /> : <X />}
-                    Deny
-                  </Button>
-                </div>
-              </div>
+              <Badge variant="secondary">
+                <ClientFormattedDate dateString={formatDate(request.requestedAt)} />
+              </Badge>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10 text-muted-foreground">
-          <p>There are no pending reactivation requests.</p>
-        </div>
-      )}
-    </>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="font-medium mb-2">Reason for Reactivation</h4>
+              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                {request.reason}
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-medium mb-2">Detailed Explanation</h4>
+              <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                {request.explanation}
+              </p>
+            </div>
+            
+            <div className="flex gap-2 pt-4">
+              <Button
+                onClick={() => handleAction(request.id, 'approve')}
+                disabled={loading === request.id}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {loading === request.id ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                )}
+                Approve
+              </Button>
+              
+              <Button
+                onClick={() => handleAction(request.id, 'reject')}
+                disabled={loading === request.id}
+                variant="destructive"
+              >
+                {loading === request.id ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <XCircle className="mr-2 h-4 w-4" />
+                )}
+                Reject
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 }

@@ -33,7 +33,8 @@ export async function connectYouTubeChannelAction(channelId: string, userEmail: 
       },
       youtubeChannelId: channelId, // Save channel ID separately for easy querying
       displayName: stats.title || user.displayName, // Update user display name from YouTube
-      avatar: stats.avatar || user.avatar // Update avatar from YouTube
+      avatar: stats.avatar || user.avatar, // Update avatar from YouTube
+      disconnectApproved: false, // Reset approval only after new connect
     };
     
     console.log('🔄 Updating user with data:', updateData);

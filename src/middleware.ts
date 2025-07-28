@@ -1,10 +1,103 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
-// This middleware is a pass-through as auth is removed.
-export function middleware(req: NextRequest) {
-  return NextResponse.next();
+const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
+
+// Protected routes that require authentication
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/admin',
+  '/plans',
+  '/payment',
+  '/settings'
+];
+
+// Public routes that don't require authentication
+const PUBLIC_ROUTES = [
+  '/',
+  '/auth/login',
+  '/auth/register',
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/google',
+  '/api/auth/google/callback',
+  '/api/auth/[...nextauth]',
+  '/api/webhooks',
+  '/api/test'
+];
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  
+  console.log('🔒 Middleware checking:', pathname);
+  
+  // Allow public routes
+  if (PUBLIC_ROUTES.some(route => pathname.startsWith(route))) {
+    console.log('✅ Public route, allowing access');
+    return NextResponse.next();
+  }
+  
+  // Check if it's a protected route
+  const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
+  
+  if (!isProtectedRoute) {
+    console.log('✅ Non-protected route, allowing access');
+    return NextResponse.next();
+  }
+  
+  console.log('🔒 Protected route detected, checking authentication');
+  
+  // Get JWT token from cookies or headers
+  const token = req.cookies.get('creator_jwt')?.value || 
+                req.headers.get('authorization')?.replace('Bearer ', '') ||
+                req.cookies.get('admin_jwt')?.value;
+  
+  if (!token) {
+    console.log('❌ No token found, redirecting to login');
+    const loginUrl = new URL('/auth/login', req.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+  
+  try {
+    // Verify JWT token
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(JWT_SECRET));
+    
+    console.log('✅ Token verified for user:', {
+      id: payload.id,
+      email: payload.email,
+      role: payload.role
+    });
+    
+    // Check if user is suspended or deactivated
+    if (payload.role === 'creator') {
+      // For creator routes, check if they have a plan (except for /plans route)
+      if (pathname.startsWith('/dashboard') && !payload.plan) {
+        console.log('❌ Creator has no plan, redirecting to plans');
+        return NextResponse.redirect(new URL('/plans', req.url));
+      }
+    }
+    
+    // Add user info to headers for use in components
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set('x-user-id', payload.id as string);
+    requestHeaders.set('x-user-email', payload.email as string);
+    requestHeaders.set('x-user-role', payload.role as string);
+    
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+    
+  } catch (error) {
+    console.log('❌ Invalid token:', error);
+    const loginUrl = new URL('/auth/login', req.url);
+    loginUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 }
 
 export const config = {

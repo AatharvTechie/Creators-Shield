@@ -27,11 +27,29 @@ export async function getDashboardData(userEmail?: string): Promise<DashboardDat
     
     let userAnalytics: UserAnalytics | null = null;
     const channelId = dbUser.youtubeChannel?.id || dbUser.youtubeChannelId;
+    console.log('Dashboard data - User:', dbUser.email, 'Channel ID:', channelId, 'YouTube Channel:', dbUser.youtubeChannel);
+    
+    // Validate channel ID format
+    if (channelId && !channelId.startsWith('UC')) {
+      console.warn('Invalid channel ID format:', channelId, 'Expected format: UC...');
+    }
+    
+    let stats: any = null;
+    let mostViewed: any = null;
+    let violations: Violation[] = [];
     if (channelId) {
         try {
-            const stats = await getChannelStats(channelId);
+        // Fetch stats, mostViewed, and violations in parallel
+        const [statsResult, mostViewedResult, violationsResult] = await Promise.all([
+          getChannelStats(channelId),
+          getMostViewedVideo(channelId),
+          getViolationsForUser(dbUser.id),
+        ]);
+        stats = statsResult;
+        mostViewed = mostViewedResult;
+        violations = violationsResult;
+        console.log('Dashboard data results:', { stats, mostViewed, violations });
             if (stats) {
-                 const mostViewed = await getMostViewedVideo(channelId);
                 userAnalytics = {
                     subscribers: stats.subscribers,
                     views: stats.views,
@@ -39,15 +57,12 @@ export async function getDashboardData(userEmail?: string): Promise<DashboardDat
                         title: mostViewed.title || undefined,
                         views: mostViewed.views
                     },
-                    // Generate a realistic, monotonic daily time series
-                    dailyData: Array.from({ length: 90 }, (_, i) => {
-                        const date = subDays(new Date(), 89 - i);
-                        // Distribute views and subscribers linearly with a slight curve
-                        const progress = (i + 1) / 90;
-                        // Use a quadratic curve for a more natural growth
+                          dailyData: Array.from({ length: 15 }, (_, i) => {
+              const date = subDays(new Date(), 14 - i);
+              const progress = (i + 1) / 15;
                         const curve = Math.pow(progress, 1.2);
-                        const dailyViews = Math.round((stats.views * curve - stats.views * Math.pow((i) / 90, 1.2)));
-                        const dailySubscribers = Math.round((stats.subscribers * curve - stats.subscribers * Math.pow((i) / 90, 1.2)));
+              const dailyViews = Math.round((stats.views * curve - stats.views * Math.pow((i) / 15, 1.2)));
+              const dailySubscribers = Math.round((stats.subscribers * curve - stats.subscribers * Math.pow((i) / 15, 1.2)));
                         return {
                             date: format(date, 'yyyy-MM-dd'),
                             views: Math.max(0, dailyViews),
@@ -55,15 +70,17 @@ export async function getDashboardData(userEmail?: string): Promise<DashboardDat
                         };
                     }),
                 }
+            console.log('User analytics created:', userAnalytics);
             }
         } catch (error) {
             console.warn("Could not fetch YouTube analytics. This might be due to an invalid API key or channel ID.", error);
-            // Don't fail the whole dashboard, just show analytics as null
             userAnalytics = null;
         }
+    } else {
+      // If no channel, still fetch violations
+      violations = await getViolationsForUser(dbUser.id);
     }
 
-    const violations = await getViolationsForUser(dbUser.id);
     const activity = violations.slice(0, 5).map((violation: Violation) => {
       let status: string;
       let variant: 'destructive' | 'default' | 'secondary' | 'outline';

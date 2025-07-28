@@ -7,7 +7,7 @@ dotenv.config();
 import { google } from 'googleapis';
 
 const getYouTubeClient = () => {
-    console.log("ENV KEY:", process.env.YOUTUBE_API_KEY);
+    console.log("ENV KEY:", process.env.YOUTUBE_API_KEY ? "Present" : "Missing");
 
     if (!process.env.YOUTUBE_API_KEY) {
         throw new Error("YouTube API key is not configured.");
@@ -30,17 +30,22 @@ export async function getChannelStats(channelId: string) {
     try {
         const response = await youtube.channels.list({
             part: ['snippet', 'statistics'],
-            id: [channelId]
+            id: [channelId],
+            fields: 'items(id,snippet(title,thumbnails(high)),statistics(subscriberCount,viewCount))' // Only fetch high quality thumbnail
         });
 
+        console.log('YouTube API response:', response.data);
         const channel = response.data.items?.[0];
 
         if (!channel || !channel.statistics || !channel.snippet) {
             console.warn("Could not retrieve channel statistics from YouTube API.");
+            console.warn("Channel:", channel);
+            console.warn("Statistics:", channel?.statistics);
+            console.warn("Snippet:", channel?.snippet);
             return null;
         }
 
-        return {
+        const result = {
             id: channel.id!,
             title: channel.snippet.title!,
             avatar: channel.snippet.thumbnails?.high?.url || channel.snippet.thumbnails?.medium?.url || channel.snippet.thumbnails?.default?.url,
@@ -48,6 +53,8 @@ export async function getChannelStats(channelId: string) {
             views: parseInt(channel.statistics.viewCount!, 10),
             url: `https://www.youtube.com/channel/${channel.id!}`
         };
+        console.log('Channel stats result:', result);
+        return result;
     } catch (error) {
         console.error(`Error fetching real channel stats for ${channelId}:`, error);
         throw new Error("Failed to fetch channel statistics from YouTube. Please check the Channel ID.");
@@ -68,7 +75,8 @@ export async function getMostViewedVideo(channelId: string) {
             channelId: channelId,
             order: 'viewCount',
             type: ['video'],
-            maxResults: 1
+            maxResults: 1,
+            fields: 'items(id(videoId),snippet(title))' // Only fetch needed fields
         });
         
         const mostViewed = response.data.items?.[0];
@@ -78,7 +86,8 @@ export async function getMostViewedVideo(channelId: string) {
 
         const videoDetails = await youtube.videos.list({
             part: ['statistics'],
-            id: [mostViewed.id.videoId]
+            id: [mostViewed.id.videoId],
+            fields: 'items(statistics(viewCount))' // Only fetch view count
         });
 
         const views = videoDetails.data.items?.[0]?.statistics?.viewCount;

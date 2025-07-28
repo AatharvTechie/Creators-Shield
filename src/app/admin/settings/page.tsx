@@ -81,18 +81,63 @@ export default function AdminSettingsPage() {
             matchThreshold: [85],
         },
     });
+
+    // Fetch platform settings on mount (moved after form initialization)
+    React.useEffect(() => {
+        async function fetchPlatformSettings() {
+            try {
+                const res = await fetch('/api/settings/platform');
+                if (!res.ok) throw new Error('Failed to fetch settings');
+                const data = await res.json();
+                
+                platformForm.reset({
+                    allowRegistrations: data.allowRegistrations,
+                    strikeThreshold: data.strikeThreshold,
+                    notificationEmail: data.notificationEmail,
+                    notifyOnStrikes: data.notifyOnStrikes,
+                    notifyOnReactivations: data.notifyOnReactivations,
+                    matchThreshold: [data.matchThreshold],
+                });
+            } catch (err) {
+                console.error('Failed to fetch platform settings:', err);
+            }
+        }
+        fetchPlatformSettings();
+    }, [platformForm]);
     
-    function onPlatformSubmit(data: z.infer<typeof platformSettingsFormSchema>) {
+    async function onPlatformSubmit(data: z.infer<typeof platformSettingsFormSchema>) {
         setIsSavingPlatform(true);
-        console.log("Simulating saving platform settings:", data);
         
-        setTimeout(() => {
+        try {
+            const res = await fetch('/api/settings/platform', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    allowRegistrations: data.allowRegistrations,
+                    strikeThreshold: data.strikeThreshold,
+                    notificationEmail: data.notificationEmail,
+                    notifyOnStrikes: data.notifyOnStrikes,
+                    notifyOnReactivations: data.notifyOnReactivations,
+                    matchThreshold: data.matchThreshold[0],
+                }),
+            });
+            
+            if (!res.ok) throw new Error('Failed to save settings');
+            
             toast({
                 title: "Platform Settings Saved",
                 description: "Your changes have been successfully saved.",
             });
+        } catch (error) {
+            console.error('Error saving platform settings:', error);
+            toast({
+                title: "Error",
+                description: "Failed to save platform settings. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
             setIsSavingPlatform(false);
-        }, 1500);
+        }
     }
   
   return (

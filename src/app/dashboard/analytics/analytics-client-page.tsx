@@ -125,7 +125,7 @@ function formatYAxisNumber(num: number): string {
   return num.toString();
 }
 
-export default function AnalyticsClientPage() {
+export default function AnalyticsClientPage({ loadingMessage }: { loadingMessage?: string }) {
     const dashboardData = useDashboardData();
     const { isYouTubeConnected } = useYouTube();
 
@@ -225,7 +225,10 @@ export default function AnalyticsClientPage() {
     }
 
     if (isLoading) {
-        return <AnalyticsLoadingSkeleton />;
+        return <>
+          {loadingMessage && <div className="mb-4 text-center text-blue-600 font-medium animate-pulse">{loadingMessage}</div>}
+          <AnalyticsLoadingSkeleton />
+        </>;
     }
     
     if (!isYouTubeConnected) {

@@ -105,7 +105,7 @@ function formatApproxNumber(num: number): string {
 }
 
 
-export default function OverviewPage() {
+export default function OverviewPage({ loadingMessage }: { loadingMessage?: string }) {
     const dashboardData = useDashboardData();
     const { isYouTubeConnected } = useYouTube();
     const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -121,7 +121,10 @@ export default function OverviewPage() {
     const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
 
     if(isLoading) {
-       return <InteractiveLoader show={true} />;
+       return <>
+         {loadingMessage && <div className="mb-4 text-center text-blue-600 font-medium animate-pulse">{loadingMessage}</div>}
+         <InteractiveLoader show={true} />
+       </>;
     }
     
     if (!isYouTubeConnected) {

@@ -34,6 +34,8 @@ const PLANS = [
 export default function PlansPage() {
 	const [loading, setLoading] = useState(true);
 	const [showAuthModal, setShowAuthModal] = useState(false);
+	const [registrationDisabled, setRegistrationDisabled] = useState(false);
+	const [registrationMessage, setRegistrationMessage] = useState("");
 	const router = useRouter();
 
 	useEffect(() => {
@@ -47,6 +49,21 @@ export default function PlansPage() {
 		}
 	}, [router]);
 
+	// Check registration status on component mount
+	useEffect(() => {
+		async function checkRegistrationStatus() {
+			try {
+				const res = await fetch('/api/settings/check-registration');
+				const data = await res.json();
+				setRegistrationDisabled(!data.allowRegistrations);
+				setRegistrationMessage(data.message);
+			} catch (err) {
+				console.error('Failed to check registration status:', err);
+			}
+		}
+		checkRegistrationStatus();
+	}, []);
+
 	if (loading) {
 		return (
 			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#1a223f] to-[#232946] text-white text-2xl">
@@ -59,6 +76,11 @@ export default function PlansPage() {
 		if (typeof window !== "undefined") {
 			const token = localStorage.getItem("creator_jwt");
 			if (!token) {
+				// Check if registrations are disabled
+				if (registrationDisabled) {
+					alert(registrationMessage);
+					return;
+				}
 				localStorage.setItem("postAuthRedirect", "/plans");
 				setShowAuthModal(true);
 				setTimeout(() => {

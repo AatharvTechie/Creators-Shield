@@ -4,7 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import { addReplyToFeedback } from '@/lib/feedback-store';
 
-export async function replyToFeedbackAction(feedbackId: string, replyMessage: string) {
+export async function replyToFeedbackAction(feedbackId: string, replyMessage: string, creatorId?: string) {
   if (!replyMessage.trim()) {
     return { success: false, message: 'Reply message cannot be empty.' };
   }
@@ -16,7 +16,7 @@ export async function replyToFeedbackAction(feedbackId: string, replyMessage: st
     await addReplyToFeedback(feedbackId, {
       adminName: adminName,
       message: replyMessage,
-    });
+    }, creatorId);
     revalidatePath('/admin/feedback');
     revalidatePath('/dashboard/feedback'); // Revalidate for the creator too
     return { success: true, message: 'Reply sent successfully.' };

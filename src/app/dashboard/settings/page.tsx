@@ -12,10 +12,11 @@ import { LogOut, Trash2, Download, RefreshCcw, Info } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
-import { useDashboardData } from '@/app/dashboard/dashboard-context';
+import { useDashboardData, useDashboardRefresh, useDashboardLoading } from '@/app/dashboard/dashboard-context';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from '@/components/ui/dialog';
 import { useRef } from 'react';
 import bcrypt from 'bcryptjs';
+import { InteractiveLoader } from '@/components/ui/loader';
 
 type MostViewedVideo = { id: string; title: string; thumbnail: string; url: string; viewCount: string };
 type YoutubeChannel = { id: string; title: string; thumbnail: string; url: string; subscriberCount?: string; viewCount?: string; mostViewedVideo?: MostViewedVideo | null };
@@ -51,6 +52,32 @@ export default function SettingsPage() {
   const user = dashboardData?.user;
   const profileName = user?.youtubeChannel?.title || user?.displayName || user?.name || 'Creator';
   const profileAvatar = user?.avatar || '/default-avatar.png';
+  const [disconnectApproved, setDisconnectApproved] = useState(false);
+  const [disconnectApprovedLoading, setDisconnectApprovedLoading] = useState(true);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const dashboardRefresh = useDashboardRefresh();
+  const [connectingNewChannel, setConnectingNewChannel] = useState(false);
+  const [waitingForDashboard, setWaitingForDashboard] = useState<string | null>(null);
+  const dashboardLoading = useDashboardLoading();
+
+  useEffect(() => {
+    async function fetchDisconnectApproved() {
+      if (user && user.email) {
+        try {
+          const res = await fetch(`/api/get-user?email=${encodeURIComponent(user.email)}`);
+          const data = await res.json();
+          setDisconnectApproved(!!data.disconnectApproved);
+        } catch (err) {
+          setDisconnectApproved(false);
+        } finally {
+          setDisconnectApprovedLoading(false);
+        }
+      } else {
+        setDisconnectApprovedLoading(false);
+      }
+    }
+    fetchDisconnectApproved();
+  }, [user]);
 
   // Track changes for enabling Save button
   useEffect(() => {
@@ -139,6 +166,14 @@ export default function SettingsPage() {
   const [verificationError, setVerificationError] = useState('');
   const [canReset, setCanReset] = useState(false);
   const [newPassword2, setNewPassword2] = useState('');
+
+  // Show loader after login and after channel connect, until all dashboard data is loaded
+  if (dashboardLoading || connectingNewChannel) {
+    const messages = connectingNewChannel 
+      ? ["We are connecting your new channel and loading your data..."] 
+      : ["We are loading your dashboard data..."];
+    return <InteractiveLoader show={true} messages={messages} />;
+  }
 
   return (
     <div className="min-h-screen w-full px-2 md:px-0">
@@ -709,11 +744,56 @@ export default function SettingsPage() {
                       <div className="mt-2 p-3 bg-blue-50 border border-blue-300 rounded max-w-xl w-full flex items-start gap-3 animate-fade-in">
                         <Info className="w-6 h-6 text-blue-500 mt-1 flex-shrink-0" />
                         <div className="flex-1">
+                          {disconnectApproved ? (
+                            <>
+                              <div className="font-semibold text-green-800 mb-1">Disconnect Approved</div>
+                              <div className="text-green-700 text-sm mb-2" style={{whiteSpace: 'normal'}}>
+                                Your disconnect request has been <b>approved by the admin</b>. You may now disconnect your channel.
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  disabled={disconnecting}
+                                  onClick={async () => {
+                                    setDisconnecting(true);
+                                    try {
+                                      const res = await fetch('/api/settings/reset-connections', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email }),
+                                      });
+                                      const data = await res.json();
+                                      if (data.success) {
+                                        setYoutubeChannelId('');
+                                        setYoutubeChannel(null);
+                                        setDisconnectApproved(false);
+                                        toast({ title: 'Disconnected', description: 'Your YouTube channel has been disconnected.' });
+                                        if (dashboardRefresh) await dashboardRefresh();
+                                      } else {
+                                        toast({ title: 'Error', description: data.error || 'Failed to disconnect', variant: 'destructive' });
+                                      }
+                                    } catch (err) {
+                                      toast({ title: 'Error', description: 'Failed to disconnect', variant: 'destructive' });
+                                    } finally {
+                                      setDisconnecting(false);
+                                    }
+                                  }}
+                                >
+                                  {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => setShowDisconnectInfo(false)}>OK</Button>
+                              </div>
+                            </>
+                          ) : (
+                            <>
                           <div className="font-semibold text-blue-800 mb-1">Channel disconnection is restricted</div>
                           <div className="text-blue-700 text-sm mb-2" style={{whiteSpace: 'normal'}}>
                             For your security, direct channel disconnection is disabled to prevent unauthorized or accidental removal of your YouTube channel. <br />
                             If you wish to disconnect, please submit a request to the admin via the Feedback section.
                           </div>
+                            </>
+                          )}
                           <div className="flex justify-end">
                             <Button size="sm" variant="outline" onClick={() => setShowDisconnectInfo(false)}>OK</Button>
                           </div>
@@ -742,12 +822,13 @@ export default function SettingsPage() {
                           setPlatformLoading(false);
                           return;
                         }
-                        // 2. Save to user profile
+                        // 2. Save to user profile (including disconnectApproved: false)
                         const saveRes = await fetch('/api/save-user', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
                             email,
+                            disconnectApproved: false,
                             youtubeChannelId: verifyData.id,
                             youtubeChannel: {
                               id: verifyData.id,
@@ -763,6 +844,9 @@ export default function SettingsPage() {
                         const saveData = await saveRes.json();
                         console.log('Save user response:', saveData);
                         if (saveData.success) {
+                          
+                          // Set connecting state and update local state
+                          setConnectingNewChannel(true);
                           setYoutubeChannelId(verifyData.id);
                           setYoutubeChannel({
                             id: verifyData.id,
@@ -773,12 +857,24 @@ export default function SettingsPage() {
                             viewCount: verifyData.viewCount,
                             mostViewedVideo: verifyData.mostViewedVideo,
                           });
-                          if (typeof window !== 'undefined') {
-                            const dashboardRefresh = (await import('@/app/dashboard/dashboard-context')).useDashboardRefresh;
-                            if (dashboardRefresh) await dashboardRefresh();
+                          
+                          // Wait a moment for database to commit, then refresh dashboard
+                          setTimeout(async () => {
+                            try {
+                              // Force a fresh database fetch to ensure we have the latest data
+                              if (dashboardRefresh) {
+                                await dashboardRefresh();
+                              }
+                              // Wait a bit more to ensure analytics data is loaded, then reload the page
+                              setTimeout(() => {
                             window.location.reload();
+                              }, 2000);
+                            } catch (error) {
+                              console.error('Error refreshing dashboard after channel connect:', error);
+                              setConnectingNewChannel(false);
+                              toast({ title: 'Connected', description: 'YouTube channel connected. Please refresh the page to see analytics.' });
                           }
-                          toast({ title: 'Connected', description: 'YouTube channel connected.' });
+                          }, 1500);
                         } else {
                           setYoutubeError(saveData.error || 'Failed to connect');
                         }

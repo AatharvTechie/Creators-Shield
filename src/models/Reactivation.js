@@ -6,6 +6,8 @@ const ReactivationSchema = new mongoose.Schema({
   email: { type: String, required: true },
   avatar: { type: String },
   requestDate: { type: Date, default: Date.now },
+  reason: { type: String, required: true },
+  explanation: { type: String, required: true },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
 });
 

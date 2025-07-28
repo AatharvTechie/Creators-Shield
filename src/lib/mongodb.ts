@@ -31,9 +31,40 @@ async function connectToDatabase() {
     if (typeof mongoose.connect !== 'function') {
       throw new Error('mongoose.connect is not a function. Mongoose import problem.');
     }
-    cached.promise = mongoose.connect(MONGODB_URI, {
+    
+    const connectWithRetry = async (retries = 3) => {
+      for (let i = 0; i < retries; i++) {
+        try {
+          console.log(`Attempting MongoDB connection (attempt ${i + 1}/${retries})`);
+          return await mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
-    });
+            serverSelectionTimeoutMS: 30000, // 30 seconds timeout
+            socketTimeoutMS: 45000, // 45 seconds socket timeout
+            connectTimeoutMS: 30000, // 30 seconds connection timeout
+            maxPoolSize: 5, // Reduced pool size
+            minPoolSize: 1,
+            maxIdleTimeMS: 30000,
+            retryWrites: true,
+            retryReads: true,
+            w: 'majority',
+            wtimeout: 10000,
+            // Add these options for better connection handling
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+          });
+        } catch (error) {
+          console.error(`MongoDB connection attempt ${i + 1} failed:`, error);
+          if (i === retries - 1) {
+            console.error('All MongoDB connection attempts failed');
+            throw error; // Throw on last attempt
+          }
+          // Wait 3 seconds before retrying
+          await new Promise(resolve => setTimeout(resolve, 3000));
+        }
+      }
+    };
+    
+    cached.promise = connectWithRetry();
   }
   cached.conn = await cached.promise;
   return cached.conn;

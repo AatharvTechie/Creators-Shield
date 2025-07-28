@@ -12,6 +12,15 @@ const creatorSchema = new mongoose.Schema({
   youtubeChannelId: { type: String }, // Separate field for easy querying
   avatar: { type: String }, // Add avatar field for profile picture
   status: { type: String, enum: ['active', 'suspended', 'deactivated'], default: 'active' },
+  suspensionTimestamp: { type: Date }, // Track when user was suspended
+  deactivationTimestamp: { type: Date }, // Track when user was deactivated
+  approvalTimestamp: { type: Date }, // Track when reactivation was approved (for 24-hour countdown)
+  reactivationRequest: {
+    requestedAt: { type: Date },
+    reason: { type: String },
+    explanation: { type: String },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
+  },
   createdAt: { type: Date, default: Date.now },
   twoFactorSecret: { type: String },
   twoFactorEnabled: { type: Boolean, default: false },

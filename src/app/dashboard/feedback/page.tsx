@@ -1,27 +1,22 @@
 'use client';
 
 import * as React from 'react';
+import { useSession } from 'next-auth/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
-} from '@/components/ui/card';
-import {
-  Form, FormControl, FormDescription, FormField,
-  FormItem, FormLabel, FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
+import * as z from 'zod';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { StarRating } from '@/components/ui/star-rating';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
-import { addFeedback, markFeedbackAsRead, getFeedbackForUser } from '@/lib/feedback-store';
-import type { Feedback } from '@/lib/types';
-import { Separator } from '@/components/ui/separator';
+import { getFeedbackForUser, addFeedback, markFeedbackAsRead } from '@/lib/feedback-store';
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
-import { useSession } from "next-auth/react";
+import { useDashboardData } from '../dashboard-context';
 
 const feedbackFormSchema = z.object({
   title: z.string().min(5, { message: 'Title must be at least 5 characters.' }),
@@ -40,7 +35,7 @@ const feedbackFormSchema = z.object({
   }
 });
 
-function getUserEmail(session: any) {
+function getUserEmail(session: any): string | null {
   let email = session?.user?.email;
   if (!email && typeof window !== "undefined") {
     const token = localStorage.getItem("creator_jwt");
@@ -56,29 +51,36 @@ function getUserEmail(session: any) {
   return email;
 }
 
-function getStatusBadge(status: string) {
-  let color = 'bg-yellow-200 text-yellow-800';
-  let label = status;
-  if (status === 'approved' || status === 'admin read') {
-    color = 'bg-green-200 text-green-800';
-    if (status === 'admin read') label = 'admin read';
-  }
-  if (status === 'rejected') color = 'bg-red-200 text-red-800';
-  return (
-    <span className={`text-xs px-2 py-1 rounded font-semibold ${color} w-fit text-center`}>
-      {label}
-    </span>
-  );
+// Define the feedback item type
+interface FeedbackItem {
+  _id?: string;
+  feedbackId?: string;
+  title: string;
+  rating: number;
+  tags: string;
+  description: string;
+  message?: string;
+  type: string;
+  status: string;
+  createdAt?: string;
+  timestamp?: string;
+  creatorRead?: boolean;
+  reply?: {
+    message: string;
+    repliedAt: string;
+  } | null;
 }
 
 export default function FeedbackPage() {
   const { data: session } = useSession();
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [history, setHistory] = React.useState<Feedback[]>([]);
   const { toast } = useToast();
-  const [disconnectRequest, setDisconnectRequest] = React.useState(false);
-  const feedbackType = disconnectRequest ? 'disconnect-request' : 'general';
+  const dashboardData = useDashboardData();
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [history, setHistory] = React.useState<FeedbackItem[]>([]);
   const [userEmail, setUserEmail] = React.useState<string | null>(null);
+  const [disconnectRequest, setDisconnectRequest] = React.useState(false);
+  const [hasNewReplies, setHasNewReplies] = React.useState(false);
+  const [expandedReplies, setExpandedReplies] = React.useState<Set<string>>(new Set());
 
   const form = useForm<z.infer<typeof feedbackFormSchema>>({
     resolver: zodResolver(feedbackFormSchema),
@@ -88,9 +90,11 @@ export default function FeedbackPage() {
       tags: '',
       description: '',
       message: '',
-      type: feedbackType,
+      type: 'general',
     },
   });
+
+  const feedbackType = form.watch('type');
 
   // Set userEmail only on client
   React.useEffect(() => {
@@ -113,16 +117,63 @@ export default function FeedbackPage() {
         type: 'general',
       });
     }
-  }, [disconnectRequest]);
+  }, [disconnectRequest, form]);
 
   const loadHistory = React.useCallback(async () => {
     if (!userEmail) return;
+    try {
+      console.log('Creator feedback - Loading history for email:', userEmail);
     const userFeedback = await getFeedbackForUser(userEmail);
+      console.log('Creator feedback - Loaded feedback data:', userFeedback);
+      
+      // Check for new replies
+      const hasNewRepliesInData = userFeedback.some((item: FeedbackItem) => 
+        item.status === 'replied' && !item.creatorRead
+      );
+      
+      if (hasNewRepliesInData && !hasNewReplies) {
+        setHasNewReplies(true);
+        toast({
+          title: 'New Reply Received!',
+          description: 'You have received a new reply from admin.',
+        });
+      }
+      
     setHistory(userFeedback);
-  }, [userEmail]);
+    } catch (error) {
+      console.error('Error loading feedback history:', error);
+    }
+  }, [userEmail, hasNewReplies, toast]);
 
   React.useEffect(() => {
     if (userEmail) loadHistory();
+  }, [userEmail, loadHistory]);
+
+  // Add real-time refresh mechanism
+  React.useEffect(() => {
+    if (!userEmail) return;
+
+    // Refresh immediately when component mounts
+    loadHistory();
+
+    // Set up interval for periodic refresh
+    const interval = setInterval(() => {
+      loadHistory();
+    }, 10000); // Refresh every 10 seconds
+
+    // Refresh when page becomes visible (user switches back to tab)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadHistory();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [userEmail, loadHistory]);
 
   async function onSubmit(values: z.infer<typeof feedbackFormSchema>) {
@@ -173,8 +224,38 @@ export default function FeedbackPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'User not logged in.' });
       return;
     }
-    await markFeedbackAsRead(feedbackId);
-    loadHistory();
+    try {
+      const creatorId = dashboardData?.user?.uid;
+      console.log('Creator feedback - Marking as read:', { feedbackId, creatorId });
+      
+      await markFeedbackAsRead(feedbackId, creatorId);
+      await loadHistory();
+      
+      // Reset new replies indicator if this was the last unread reply
+      const remainingUnread = history.filter((item: FeedbackItem) => 
+        item.status === 'replied' && !item.creatorRead && item._id !== feedbackId
+      );
+      if (remainingUnread.length === 0) {
+        setHasNewReplies(false);
+      }
+      
+      toast({ title: 'Marked as Read', description: 'Feedback marked as read successfully.' });
+    } catch (error) {
+      console.error('Error marking feedback as read:', error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to mark feedback as read.' });
+    }
+  };
+
+  const toggleReplyExpansion = (feedbackId: string) => {
+    setExpandedReplies(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(feedbackId)) {
+        newSet.delete(feedbackId);
+      } else {
+        newSet.add(feedbackId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -186,16 +267,22 @@ export default function FeedbackPage() {
         </CardHeader>
         <CardContent>
           <div className="mb-4 flex flex-col md:flex-row gap-2">
-            <Button variant={disconnectRequest ? 'default' : 'outline'} onClick={() => {
+            <Button 
+              variant={disconnectRequest ? 'default' : 'outline'} 
+              onClick={() => {
               setDisconnectRequest(true);
               form.setValue('type', 'disconnect-request');
-            }}>
+              }}
+            >
               Request to disconnect/change my YouTube channel
             </Button>
-            <Button variant={!disconnectRequest ? 'default' : 'outline'} onClick={() => {
+            <Button 
+              variant={!disconnectRequest ? 'default' : 'outline'} 
+              onClick={() => {
               setDisconnectRequest(false);
               form.setValue('type', 'general');
-            }}>
+              }}
+            >
               General Feedback
             </Button>
           </div>
@@ -300,8 +387,23 @@ export default function FeedbackPage() {
       {/* Feedback History */}
       <Card>
         <CardHeader>
-          <CardTitle>My Feedback History</CardTitle>
-          <CardDescription>View your past submissions and responses from our team.</CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <CardTitle>My Feedback History</CardTitle>
+              </div>
+              <CardDescription>View your past submissions and responses from our team.</CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => loadHistory()}
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {history.length > 0 ? (
@@ -312,15 +414,75 @@ export default function FeedbackPage() {
                 <span className="text-right">Submitted Date</span>
               </div>
               <div className="space-y-4">
-                {history.map(item => (
-                  <div key={item.feedbackId} className="border p-4 rounded-md">
+                {history.map((item, index) => (
+                  <div key={`${item._id || item.feedbackId || index}`} className="border border-gray-200 p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
                     <div className="grid grid-cols-3 gap-2 items-center">
-                      <span className="font-semibold capitalize text-left">{item.type.replace('-', ' ')}</span>
-                      <div className="flex justify-center">
-                        {getStatusBadge((item as any).status || 'pending')}
+                      <span className="font-semibold capitalize text-left text-gray-800">{item.type.replace('-', ' ')}</span>
+                      <div className="flex justify-center items-center gap-2">
+                        {(item.status === 'admin_read' || item.creatorRead) && (
+                          <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-xs font-medium border border-emerald-200">Read</span>
+                        )}
+                        {item.status === 'replied' && (
+                          <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium border border-purple-200">Replied</span>
+                        )}
+                        {item.status === 'pending' && (
+                          <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-medium border border-amber-200">Pending</span>
+                        )}
                       </div>
-                      <span className="text-sm text-muted-foreground text-right"><ClientFormattedDate dateString={(item as any).createdAt || item.timestamp || ''} /></span>
+                      <span className="text-sm text-gray-500 text-right"><ClientFormattedDate dateString={item.createdAt || item.timestamp || ''} /></span>
                     </div>
+                    
+                    {/* Feedback Content */}
+                    <div className="mt-3 p-3 bg-gray-50 rounded-md">
+                      <h4 className="font-medium text-gray-800 mb-2">{item.title}</h4>
+                      <p className="text-sm text-gray-600 leading-relaxed">{item.description}</p>
+                    </div>
+
+                    {/* Reply Section */}
+                    {item.status === 'replied' && item.reply && item.reply.message && (
+                      <div className="mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => toggleReplyExpansion(item._id || item.feedbackId || '')}
+                          className="w-full justify-between bg-blue-to-r from-purple-50 to-indigo-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-indigo-100 hover:border-purple-300 transition-all duration-200"
+                        >
+                          <div className="flex items-center gap-2">
+                            <MessageSquare className="h-4 w-4" />
+                            <span className="font-medium">View Admin Reply</span>
+                            {!item.creatorRead && (
+                              <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" title="New reply" />
+                            )}
+                          </div>
+                          {expandedReplies.has(item._id || item.feedbackId || '') ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                        
+                        {expandedReplies.has(item._id || item.feedbackId || '') && (
+                          <div className="mt-3 p-4 bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-lg">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                              <span className="font-semibold text-purple-800">Admin Reply</span>
+                              <span className="text-xs text-purple-600">•</span>
+                              <span className="text-xs text-purple-600"><ClientFormattedDate dateString={item.reply.repliedAt} /></span>
+                            </div>
+                            <p className="text-sm text-purple-900 whitespace-pre-wrap leading-relaxed mb-3">{item.reply.message}</p>
+                            {!item.creatorRead && (
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleMarkAsRead(item._id || item.feedbackId || '')}
+                                className="bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200"
+                              >
+                                Mark as Read
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

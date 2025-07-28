@@ -19,7 +19,7 @@ import { hasUnreadCreatorFeedback } from '@/lib/feedback-store';
 import { useYouTube } from '@/context/youtube-context';
 import { useDashboardData } from '@/app/dashboard/dashboard-context';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 import { useSession } from "next-auth/react";
 
 export function CreatorSidebar() {
@@ -36,12 +36,26 @@ export function CreatorSidebar() {
   const avatar = user?.youtubeChannel?.thumbnail || user?.avatar || "https://placehold.co/128x128.png";
   const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
 
-  const handleSignOut = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('creator_jwt');
+  // New logout logic
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('creator_jwt');
+        localStorage.removeItem('admin_jwt');
+      }
+      router.push('/auth/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('creator_jwt');
+        localStorage.removeItem('admin_jwt');
+      }
+      router.push('/auth/login');
     }
-    signOut({ redirect: false });
-    router.push('/auth/login');
   };
 
   const menuItems = [
@@ -56,10 +70,22 @@ export function CreatorSidebar() {
   ];
 
   React.useEffect(() => {
-    if (session?.user?.email) {
-      hasUnreadCreatorFeedback(session.user.email).then(setHasUnread);
+    let interval: NodeJS.Timeout | undefined;
+    async function checkUnread() {
+      if (user?.uid) {
+        try {
+          const res = await fetch(`/api/feedback/unread?role=creator&creatorId=${user.uid}`);
+          const data = await res.json();
+          setHasUnread(!!data.hasUnread);
+        } catch {
+          setHasUnread(false);
     }
-  }, [pathname, session]);
+      }
+    }
+    checkUnread();
+    interval = setInterval(checkUnread, 10000); // poll every 10s
+    return () => interval && clearInterval(interval);
+  }, [user?.uid]);
   
   return (
     <Sidebar>
@@ -96,6 +122,9 @@ export function CreatorSidebar() {
                 >
                   <NextLink href={item.href} prefetch={false} className={isDisabled ? "pointer-events-none pl-4 flex items-center gap-3" : "pl-4 flex items-center gap-3"}>
                     <item.icon />
+                    {item.href === '/dashboard/feedback' && hasUnread && (
+                      <span className="absolute -top-1 left-5 w-2 h-2 rounded-full bg-green-500 animate-pulse z-10" />
+                    )}
                     <span>{item.label}</span>
                   </NextLink>
                 </SidebarMenuButton>
@@ -119,15 +148,17 @@ export function CreatorSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <button
-              onClick={handleSignOut}
+            <Button
+              onClick={handleLogout}
+              variant="ghost"
+              size="sm"
               className="flex items-center gap-3 px-2 py-2 rounded-md text-destructive hover:text-red-400 transition text-sm font-medium focus:outline-none focus:ring-2 focus:ring-destructive/50"
               title="Sign out"
               style={{ minWidth: 0, background: 'none' }}
             >
               <LogOut className="w-5 h-5" />
               <span>Sign out</span>
-            </button>
+            </Button>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

@@ -27,8 +27,10 @@ export async function POST(req) {
       const update = { ...updateFields };
       update.youtubeChannelId = youtubeChannelId || null;
       update.youtubeChannel = youtubeChannel || null;
+      console.log('Updating user with:', { email, youtubeChannelId, youtubeChannel: youtubeChannel ? 'present' : 'null' });
       await Creator.updateOne({ email }, { $set: update });
       user = await Creator.findOne({ email }); // fetch updated user
+      console.log('Updated user:', { email: user.email, youtubeChannelId: user.youtubeChannelId, hasYouTubeChannel: !!user.youtubeChannel });
     }
     return Response.json({
       success: true,
