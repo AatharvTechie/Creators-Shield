@@ -23,6 +23,10 @@ export interface User {
   };
   twoFactorEnabled?: boolean;
   twoFactorSecret?: string;
+  // Plan and subscription fields
+  plan?: 'free' | 'monthly' | 'yearly' | 'expired';
+  planExpiry?: Date;
+  subscriptionId?: string;
 }
 
 /**

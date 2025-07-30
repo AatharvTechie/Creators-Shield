@@ -5,10 +5,16 @@ import Creator from '@/models/Creator';
 export async function POST(req) {
   const body = await req.json();
   const { planId, userId } = body;
+  
+  // TODO: Update these Razorpay plan IDs in your Razorpay dashboard to match new pricing:
+  // - Monthly plan ($70): Update plan_QvemyKdfzVGTLc to $70/month
+  // - Yearly plan ($500): Update plan_Qvenh9X4D8ggzw to $500/year
+  
   // Map user-friendly planId to Razorpay plan id
   let razorpayPlanId = planId;
   if (planId === 'monthly') razorpayPlanId = 'plan_QvemyKdfzVGTLc';
   if (planId === 'yearly') razorpayPlanId = 'plan_Qvenh9X4D8ggzw';
+  
   await dbConnect();
   const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
@@ -18,7 +24,7 @@ export async function POST(req) {
     const subscription = await razorpay.subscriptions.create({
       plan_id: razorpayPlanId,
       customer_notify: 1,
-      total_count: razorpayPlanId === 'plan_QvemyKdfzVGTLc4' ? 12 : 1,
+      total_count: razorpayPlanId === 'plan_QvemyKdfzVGTLc' ? 12 : 1,
     });
     // Calculate plan expiry date
     let planExpiry = null;

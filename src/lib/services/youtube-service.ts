@@ -31,7 +31,7 @@ export async function getChannelStats(channelId: string) {
         const response = await youtube.channels.list({
             part: ['snippet', 'statistics'],
             id: [channelId],
-            fields: 'items(id,snippet(title,thumbnails(high)),statistics(subscriberCount,viewCount))' // Only fetch high quality thumbnail
+            fields: 'items(id,snippet(title,thumbnails(high)),statistics(subscriberCount,viewCount,videoCount))' // Added videoCount
         });
 
         console.log('YouTube API response:', response.data);
@@ -51,6 +51,7 @@ export async function getChannelStats(channelId: string) {
             avatar: channel.snippet.thumbnails?.high?.url || channel.snippet.thumbnails?.medium?.url || channel.snippet.thumbnails?.default?.url,
             subscribers: parseInt(channel.statistics.subscriberCount!, 10),
             views: parseInt(channel.statistics.viewCount!, 10),
+            videos: parseInt(channel.statistics.videoCount!, 10), // Added video count
             url: `https://www.youtube.com/channel/${channel.id!}`
         };
         console.log('Channel stats result:', result);

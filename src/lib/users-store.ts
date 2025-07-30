@@ -2,6 +2,7 @@ import connectToDatabase from './mongodb';
 import Creator from '../models/Creator.js';
 import Reactivation from '../models/Reactivation.js';
 import type { User } from './types';
+import { sendAccountReactivationEmail } from './services/backend-services';
 
 export async function getAllUsers(): Promise<User[]> {
   await connectToDatabase();
@@ -104,9 +105,22 @@ export async function checkSuspensionStatus(userId: string) {
   });
   
   if (timeDiff <= 0) {
-    // Suspension has expired, automatically reactivate
+    // Suspension has expired, automatically reactivate and send email
     console.log('✅ Suspension expired, automatically reactivating user');
     await updateUserStatus(userId, 'active');
+    
+    // Send reactivation email
+    try {
+      await sendAccountReactivationEmail({
+        to: creator.email,
+        creatorName: creator.displayName || creator.name || 'Creator',
+        reactivationTime: new Date().toLocaleString()
+      });
+      console.log('✅ Reactivation email sent to:', creator.email);
+    } catch (emailError) {
+      console.error('❌ Failed to send reactivation email:', emailError);
+    }
+    
     return { isSuspended: false, timeRemaining: null };
   }
   

@@ -53,6 +53,10 @@ export default function LoginPage() {
     if (data.token) {
       // Store JWT in localStorage for backward compatibility
       localStorage.setItem("creator_jwt", data.token);
+      // Store user email for API calls
+      if (data.user && data.user.email) {
+        localStorage.setItem("user_email", data.user.email);
+      }
       
       // Post-auth redirect logic
       const postAuthRedirect = typeof window !== 'undefined' ? localStorage.getItem('postAuthRedirect') : null;
@@ -61,17 +65,8 @@ export default function LoginPage() {
         router.push(postAuthRedirect);
       } else if (data.user && data.user.role === 'admin') {
         router.push("/admin");
-      } else if (
-        !data.user.plan ||
-        data.user.plan === null ||
-        data.user.plan === undefined ||
-        data.user.plan === '' ||
-        data.user.plan === 'expired'
-      ) {
-        // New user or user with no plan: go to /plans
-        router.push("/plans");
       } else {
-        // User with any plan (free, monthly, yearly): go to dashboard
+        // All users go to dashboard after login
         router.push("/dashboard/overview");
       }
     } else if (data.error === 'Account Suspended') {

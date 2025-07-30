@@ -1,94 +1,226 @@
 
 'use client';
 
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import type { DashboardData } from '@/lib/types';
-import { getDashboardData } from './actions';
-import { useYouTube } from '@/context/youtube-context';
-import jwt from 'jsonwebtoken';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User, UserAnalytics } from '@/lib/types';
+import { hasFeatureAccess, getFeatureLimit, isUnlimited, canAccessDashboardFeature, checkUsageLimit, getUpgradeSuggestion, UsageStats } from '@/lib/plan-features';
 
-const DashboardContext = createContext<{
-  data: DashboardData | null;
-  refresh: () => Promise<void>;
+interface DashboardData {
+  user: User | null;
+  analytics: UserAnalytics | null;
+  activity: any[];
+  isLoading: boolean;
+  error: string | null;
+  usageStats: UsageStats;
+  planFeatures: {
+    canAccessFeature: (feature: string) => boolean;
+    getFeatureLimit: (feature: string) => number;
+    isUnlimited: (feature: string) => boolean;
+    checkUsageLimits: () => any;
+    getUpgradeSuggestion: () => string | null;
+  };
+  refresh: () => void;
   loading: boolean;
-} | null>(null);
-
-function getEmailFromJWT() {
-  if (typeof window === 'undefined') return null;
-  const token = localStorage.getItem('creator_jwt');
-  if (!token) return null;
-  try {
-    const decoded = jwt.decode(token);
-    if (decoded && typeof decoded === 'object' && 'email' in decoded) {
-      return (decoded as { email?: string }).email || null;
-    }
-    return null;
-  } catch {
-    return null;
-  }
 }
 
-export function DashboardDataProvider({ children }: { children: ReactNode; }) {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(false); // Start with false to avoid initial loader
-  const [isInitialLoad, setIsInitialLoad] = useState(true); // Track initial load separately
+const DashboardContext = createContext<DashboardData | undefined>(undefined);
 
-  const refresh = async () => {
-    setLoading(true);
-    try {
-    const email = getEmailFromJWT();
-    const freshData = await getDashboardData(email ?? undefined);
-    setData(freshData);
-      
-      // Check if analytics data is loaded for users with YouTube channels
-      if (freshData?.user?.youtubeChannelId && !freshData?.analytics) {
-        console.log('Analytics data missing for user with channel, keeping loader active');
-        // Keep loading state true if analytics is missing for users with channels
-        return;
+export function DashboardDataProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
+  const [activity, setActivity] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [usageStats, setUsageStats] = useState<UsageStats>({
+    youtubeChannels: 0,
+    videosMonitored: 0,
+    violationDetections: 0,
+    dmcaRequests: 0,
+    platformsConnected: 0
+  });
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Check if we're in the browser
+        if (typeof window === 'undefined') {
+          setIsLoading(false);
+          return;
+        }
+
+        const token = localStorage.getItem('creator_jwt');
+        const userEmail = localStorage.getItem('user_email');
+        
+        console.log('🔍 Dashboard context - Token:', token ? 'Present' : 'Missing');
+        console.log('🔍 Dashboard context - Email:', userEmail);
+        
+        if (!token) {
+          setError('No authentication token found');
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!userEmail) {
+          setError('User email not found');
+          setIsLoading(false);
+          return;
+        }
+        
+        // Try to fetch dashboard data first
+        try {
+          const dashboardResponse = await fetch(`/api/dashboard/data?email=${encodeURIComponent(userEmail)}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (dashboardResponse.ok) {
+            const dashboardData = await dashboardResponse.json();
+            console.log('✅ Dashboard data fetched successfully:', dashboardData);
+            
+            setUser(dashboardData.user);
+            setAnalytics(dashboardData.analytics);
+            setActivity(dashboardData.activity || []);
+            
+            // Update usage stats based on user data
+            const userData = dashboardData.user;
+            setUsageStats({
+              youtubeChannels: userData?.youtubeChannelId ? 1 : 0,
+              videosMonitored: 0, // You can update this based on actual data
+              violationDetections: 0, // You can update this based on actual data
+              dmcaRequests: 0, // You can update this based on actual data
+              platformsConnected: userData?.platformsConnected?.length || 0
+            });
+          } else {
+            console.log('⚠️ Dashboard data fetch failed, trying fallback method');
+            throw new Error('Dashboard data fetch failed');
+          }
+        } catch (dashboardError) {
+          console.log('🔄 Using fallback method for data fetching');
+          
+          // Fallback to old method if dashboard data fails
+          const response = await fetch(`/api/get-user?email=${encodeURIComponent(userEmail)}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Get user API failed:', response.status, errorText);
+            throw new Error('Failed to fetch user data');
+          }
+
+          const data = await response.json();
+          console.log('✅ User data fetched:', data);
+          
+          if (data._id) {
+            setUser(data);
+            
+            // Try to fetch usage statistics
+            try {
+              const usageResponse = await fetch('/api/dashboard/usage-stats', {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              if (usageResponse.ok) {
+                const usageData = await usageResponse.json();
+                console.log('✅ Usage stats fetched:', usageData);
+                setUsageStats(usageData.stats || {
+                  youtubeChannels: data.youtubeChannelId ? 1 : 0,
+                  videosMonitored: 0,
+                  violationDetections: 0,
+                  dmcaRequests: 0,
+                  platformsConnected: data.platformsConnected?.length || 0
+                });
+              } else {
+                console.log('⚠️ Usage stats fetch failed, using defaults');
+                setUsageStats({
+                  youtubeChannels: data.youtubeChannelId ? 1 : 0,
+                  videosMonitored: 0,
+                  violationDetections: 0,
+                  dmcaRequests: 0,
+                  platformsConnected: data.platformsConnected?.length || 0
+                });
+              }
+            } catch (usageError) {
+              console.log('⚠️ Usage stats error, using defaults:', usageError);
+              setUsageStats({
+                youtubeChannels: data.youtubeChannelId ? 1 : 0,
+                videosMonitored: 0,
+                violationDetections: 0,
+                dmcaRequests: 0,
+                platformsConnected: data.platformsConnected?.length || 0
+              });
+            }
+          } else {
+            setError('Failed to load user data');
+          }
+        }
+      } catch (err) {
+        console.error('❌ Dashboard context error:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Error refreshing dashboard data:', error);
-    } finally {
-      setLoading(false);
-      setIsInitialLoad(false);
+    };
+
+    fetchUserData();
+  }, []);
+
+  const planFeatures = {
+    canAccessFeature: (feature: string) => {
+      // All features are available for all plans
+      return true;
+    },
+    getFeatureLimit: (feature: string) => {
+      // All features have unlimited limits
+      return -1;
+    },
+    isUnlimited: (feature: string) => {
+      // All features are unlimited
+      return true;
+    },
+    checkUsageLimits: () => {
+      // All usage limits are unlimited
+      return {
+        canAddYouTubeChannel: true,
+        canAddVideo: true,
+        canDetectViolation: true,
+        canSubmitDmca: true,
+        canAddPlatform: true
+      };
+    },
+    getUpgradeSuggestion: () => {
+      // No upgrade suggestions needed since all features are available
+      return null;
     }
   };
 
-  useEffect(() => {
-    // Load data on mount without showing loader initially
-    const loadInitialData = async () => {
-      setLoading(true);
-      try {
-        const email = getEmailFromJWT();
-        if (!email) {
-          console.log('No email found in JWT, skipping initial data load');
-          setLoading(false);
-          setIsInitialLoad(false);
-          return;
-        }
-        
-        const initialData = await getDashboardData(email ?? undefined);
-        setData(initialData);
-        
-        // Check if analytics data is loaded for users with YouTube channels
-        if (initialData?.user?.youtubeChannelId && !initialData?.analytics) {
-          console.log('Initial load: Analytics data missing for user with channel');
-          // Keep loading state true if analytics is missing for users with channels
-          return;
-        }
-      } catch (error) {
-        console.error('Error loading initial dashboard data:', error);
-        // Don't keep loading state true on error, just show empty state
-      } finally {
-        setLoading(false);
-        setIsInitialLoad(false);
-      }
-    };
-    loadInitialData();
-  }, []);
+  const refresh = () => {
+    // Trigger a refresh by refetching user data
+    setIsLoading(true);
+    setError(null);
+    // This will trigger the useEffect to refetch data
+  };
+
+  const value: DashboardData = {
+    user,
+    analytics,
+    activity,
+    isLoading,
+    error,
+    usageStats,
+    planFeatures,
+    refresh,
+    loading: isLoading
+  };
 
   return (
-    <DashboardContext.Provider value={{ data, refresh, loading: loading || isInitialLoad }}>
+    <DashboardContext.Provider value={value}>
       {children}
     </DashboardContext.Provider>
   );
@@ -96,15 +228,24 @@ export function DashboardDataProvider({ children }: { children: ReactNode; }) {
 
 export function useDashboardData() {
   const context = useContext(DashboardContext);
-  return context?.data;
+  if (context === undefined) {
+    throw new Error('useDashboardData must be used within a DashboardDataProvider');
+  }
+  return context;
 }
 
 export function useDashboardRefresh() {
   const context = useContext(DashboardContext);
-  return context?.refresh;
+  if (context === undefined) {
+    throw new Error('useDashboardRefresh must be used within a DashboardDataProvider');
+  }
+  return context.refresh;
 }
 
 export function useDashboardLoading() {
   const context = useContext(DashboardContext);
-  return context?.loading;
+  if (context === undefined) {
+    throw new Error('useDashboardLoading must be used within a DashboardDataProvider');
+  }
+  return context.loading;
 }

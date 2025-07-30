@@ -1,10 +1,13 @@
 'use server';
 
-import { unstable_noStore as noStore } from 'next/cache';
 import mongoose from 'mongoose';
+import connectToDatabase from './mongodb';
 import ReportModel from '../models/Report';
-import Strike from '../models/Strike';
 import Creator from '../models/Creator';
+import Strike from '../models/Strike';
+import Settings from '../models/Settings';
+import { sendAdminNotificationEmail } from './services/backend-services';
+import { noStore } from 'next/cache';
 
 // Define the Report interface (you can extend this if needed)
 export interface Report {
@@ -136,6 +139,47 @@ export async function createReport(data: Partial<Report>): Promise<void> {
       { upsert: true, new: true }
     );
     // --- End strike logic ---
+    
+    // Send admin notification emails for new strike request
+    try {
+      const settings = await Settings.findOne();
+      const notifyOnStrikes = settings?.notifyOnStrikes !== false; // Default to true
+      
+      if (notifyOnStrikes) {
+        const adminEmails = [];
+        
+        // Add primary admin email if it exists
+        if (settings?.notificationEmail) {
+          adminEmails.push(settings.notificationEmail);
+        }
+        
+        // Add secondary admin email (always contactpradeeprajput@gmail.com)
+        adminEmails.push('contactpradeeprajput@gmail.com');
+        
+        // Remove duplicates
+        const uniqueEmails = [...new Set(adminEmails)];
+        
+        const adminMessage = `New strike request received from ${data.creatorName} (${data.creatorId}). Platform: ${data.platform}, Suspect URL: ${data.suspectUrl}`;
+        const adminSubject = '[CreatorShield] New Strike Request';
+        
+        // Send to all admin emails
+        await Promise.all(
+          uniqueEmails.map(email => 
+            sendAdminNotificationEmail({ 
+              to: email, 
+              subject: adminSubject, 
+              message: adminMessage,
+              creatorName: data.creatorName,
+              creatorEmail: data.creatorEmail
+            })
+          )
+        );
+        console.log('Admin notification emails sent for new strike request');
+      }
+    } catch (error) {
+      console.error('Failed to send admin notification emails for strike:', error);
+      // Don't fail strike creation if admin emails fail
+    }
   } catch (err) {
     console.error('Error creating report:', err);
   }

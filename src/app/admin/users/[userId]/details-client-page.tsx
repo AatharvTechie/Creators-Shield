@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { suspendCreator, liftSuspension, deactivateCreator } from './actions';
 import type { User } from '@/lib/types';
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
+import { SuspensionDialog } from '@/components/ui/suspension-dialog';
 
 
 const platformIcons = {
@@ -36,6 +37,8 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
   const { toast } = useToast();
   const [user, setUser] = useState<User | undefined>(initialUser);
   const [isLoading, setIsLoading] = useState<'suspend' | 'lift' | 'deactivate' | null>(null);
+  const [suspensionDialogOpen, setSuspensionDialogOpen] = useState(false);
+  const [suspensionAction, setSuspensionAction] = useState<'suspend' | 'deactivate'>('suspend');
 
   // This effect keeps the local state in sync if the server component re-renders with new props
   useEffect(() => {
@@ -73,6 +76,33 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
       }
 
       setIsLoading(null);
+  };
+
+  const handleSuspensionDialog = (action: 'suspend' | 'deactivate') => {
+    setSuspensionAction(action);
+    setSuspensionDialogOpen(true);
+  };
+
+  const handleEmailSend = async (emailData: { subject: string; html: string }) => {
+    try {
+      const response = await fetch('/api/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: user?.email,
+          subject: emailData.subject,
+          html: emailData.html,
+          from: process.env.SENDER_EMAIL || process.env.BREVO_SMTP_USERNAME
+        }),
+      });
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      return { success: false, message: 'Failed to send email' };
+    }
   };
 
 
@@ -192,9 +222,9 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
                     Lift Suspension
                 </Button>
             ) : (
-                <Button variant="outline" onClick={() => handleAction('suspend')} disabled={isLoading === 'suspend' || user.status === 'deactivated'}>
-                    {isLoading === 'suspend' ? <Loader2 className="mr-2 animate-spin" /> : <ShieldBan className="mr-2" />}
-                    Suspend for 24 Hours
+                <Button variant="outline" onClick={() => handleSuspensionDialog('suspend')} disabled={isLoading === 'suspend' || user.status === 'deactivated'}>
+                    <ShieldBan className="mr-2" />
+                    Suspend with Email
                 </Button>
             )}
           </div>
@@ -203,35 +233,33 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
               <h3 className="font-semibold text-destructive">Deactivate Creator</h3>
               <p className="text-sm text-muted-foreground">This will log the creator out. They must request reactivation to log in again.</p>
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={isLoading === 'deactivate' || user.status === 'deactivated'}>
+            <Button 
+              variant="destructive" 
+              onClick={() => handleSuspensionDialog('deactivate')}
+              disabled={isLoading === 'deactivate' || user.status === 'deactivated'}
+            >
                     {user.status === 'deactivated' ? 'Deactivated' : (
                         <>
-                            {isLoading === 'deactivate' ? <Loader2 className="mr-2 animate-spin" /> : <Trash2 className="mr-2" />}
-                            Deactivate
+                        <Trash2 className="mr-2" />
+                        Deactivate with Email
                         </>
                     )}
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure you want to deactivate {user?.displayName}?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action will require the creator to submit a reactivation request for your approval to regain access.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleAction('deactivate')}>
-                    Yes, Deactivate Creator
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </div>
         </CardContent>
       </Card>
+
+      {/* Suspension Dialog */}
+      {user && (
+        <SuspensionDialog
+          user={user}
+          action={suspensionAction}
+          onAction={handleAction}
+          onEmailSend={handleEmailSend}
+          isOpen={suspensionDialogOpen}
+          onOpenChange={setSuspensionDialogOpen}
+        />
+      )}
     </div>
   );
 }

@@ -7,11 +7,10 @@ const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 
 // Protected routes that require authentication
 const PROTECTED_ROUTES = [
-  '/dashboard',
   '/admin',
-  '/plans',
-  '/payment',
-  '/settings'
+  '/api/dashboard',
+  '/api/settings',
+  '/api/payment'
 ];
 
 // Public routes that don't require authentication
@@ -47,12 +46,18 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
   
+  // For API routes, we need to check authentication
+  if (pathname.startsWith('/api/')) {
+    console.log('🔒 API route detected, checking authentication');
+  }
+  
   console.log('🔒 Protected route detected, checking authentication');
   
-  // Get JWT token from cookies or headers
+  // Get JWT token from cookies, headers, or localStorage (via custom header)
   const token = req.cookies.get('creator_jwt')?.value || 
                 req.headers.get('authorization')?.replace('Bearer ', '') ||
-                req.cookies.get('admin_jwt')?.value;
+                req.cookies.get('admin_jwt')?.value ||
+                req.headers.get('x-auth-token');
   
   if (!token) {
     console.log('❌ No token found, redirecting to login');

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -15,6 +15,9 @@ export default function RegisterPage() {
   const [registrationDisabled, setRegistrationDisabled] = useState(false);
   const [registrationMessage, setRegistrationMessage] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams?.get("redirect");
+  const selectedPlan = searchParams?.get("plan");
 
   // Check registration status on component mount
   React.useEffect(() => {
@@ -83,13 +86,21 @@ export default function RegisterPage() {
     if (data.success) {
       setSuccess(true);
       setSuccessMessage(data.message || "Registration successful! Redirecting...");
-      // Always redirect to login after registration
+      // Store user email if available
+      if (data.user && data.user.email) {
+        localStorage.setItem("user_email", data.user.email);
+      }
+      // Redirect based on the redirect parameter
       setTimeout(() => {
         if (typeof window !== 'undefined') {
-          // If user came from plans, keep postAuthRedirect in localStorage
-          // (already set by plans page)
-        }
+          if (redirectTo === "payment" && selectedPlan) {
+            // Store the selected plan for payment page
+            localStorage.setItem('selected_plan', selectedPlan);
+            router.push(`/payment?plan=${selectedPlan}`);
+          } else {
         router.push('/plans');
+          }
+        }
       }, 2000);
     } else {
       // Show the specific error message from the API

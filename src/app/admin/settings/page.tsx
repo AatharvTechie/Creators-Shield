@@ -30,8 +30,10 @@ const platformSettingsFormSchema = z.object({
   allowRegistrations: z.boolean().default(true),
   strikeThreshold: z.coerce.number().min(1).max(10),
   notificationEmail: z.string().email({ message: "Please enter a valid email." }),
+  secondaryNotificationEmail: z.string().email({ message: "Please enter a valid email." }).optional(),
   notifyOnStrikes: z.boolean().default(true),
   notifyOnReactivations: z.boolean().default(true),
+  notifyOnNewRegistrations: z.boolean().default(true),
   matchThreshold: z.array(z.number()).default([85]),
 });
 
@@ -76,8 +78,10 @@ export default function AdminSettingsPage() {
             allowRegistrations: true,
             strikeThreshold: 3,
             notificationEmail: "admin-alerts@creatorshield.com",
+            secondaryNotificationEmail: "secondary-alerts@creatorshield.com",
             notifyOnStrikes: true,
             notifyOnReactivations: true,
+            notifyOnNewRegistrations: true,
             matchThreshold: [85],
         },
     });
@@ -94,8 +98,10 @@ export default function AdminSettingsPage() {
                     allowRegistrations: data.allowRegistrations,
                     strikeThreshold: data.strikeThreshold,
                     notificationEmail: data.notificationEmail,
+                    secondaryNotificationEmail: data.secondaryNotificationEmail,
                     notifyOnStrikes: data.notifyOnStrikes,
                     notifyOnReactivations: data.notifyOnReactivations,
+                    notifyOnNewRegistrations: data.notifyOnNewRegistrations,
                     matchThreshold: [data.matchThreshold],
                 });
             } catch (err) {
@@ -116,8 +122,10 @@ export default function AdminSettingsPage() {
                     allowRegistrations: data.allowRegistrations,
                     strikeThreshold: data.strikeThreshold,
                     notificationEmail: data.notificationEmail,
+                    secondaryNotificationEmail: data.secondaryNotificationEmail,
                     notifyOnStrikes: data.notifyOnStrikes,
                     notifyOnReactivations: data.notifyOnReactivations,
+                    notifyOnNewRegistrations: data.notifyOnNewRegistrations,
                     matchThreshold: data.matchThreshold[0],
                 }),
             });
@@ -337,6 +345,22 @@ export default function AdminSettingsPage() {
                                 </FormItem>
                             )}
                         />
+                        <FormField
+                            control={platformForm.control}
+                            name="secondaryNotificationEmail"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Secondary Admin Notification Email</FormLabel>
+                                <FormControl>
+                                    <Input type="email" placeholder="secondary@example.com" {...field} className="max-w-xs" />
+                                </FormControl>
+                                <FormDescription>
+                                    An optional secondary email address for additional admin notifications.
+                                </FormDescription>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <div>
                           <FormLabel className="font-semibold flex items-center gap-2 mb-1"><Bell className="w-5 h-5 text-primary" /> Receive Alerts For</FormLabel>
                           <div className="space-y-2 mt-2 bg-muted/40 rounded-lg p-3">
@@ -363,6 +387,19 @@ export default function AdminSettingsPage() {
                                   </FormControl>
                                   <RefreshCw className="w-5 h-5 text-blue-600" />
                                   <FormLabel className="font-normal">Reactivation Requests</FormLabel>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={platformForm.control}
+                              name="notifyOnNewRegistrations"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center gap-3 p-2 rounded-lg border border-gray-200 transition-colors">
+                                  <FormControl>
+                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                                  </FormControl>
+                                  <UserPlus className="w-5 h-5 text-green-600" />
+                                  <FormLabel className="font-normal">New User Registrations</FormLabel>
                                 </FormItem>
                               )}
                             />

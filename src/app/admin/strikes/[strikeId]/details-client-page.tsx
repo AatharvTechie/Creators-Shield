@@ -23,58 +23,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-
-const emailTemplates = {
-  standard: {
-    name: 'Standard Approval Notice',
-    body: (name: string, date: string, url: string) => `
-      <div style="font-family: sans-serif; line-height: 1.6;">
-        <p>Hi ${name},</p>
-        <p>This is to inform you that your copyright strike request for the content at <strong>${url}</strong> (submitted on ${date}) has been reviewed and approved by our team.</p>
-        <p>We will now proceed with the formal takedown process with the concerned platform. You will be notified once the platform takes action or if further information is required.</p>
-        <p>Thank you for your patience and for helping us protect your content.</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p style="font-size: 0.9em; color: #555;">If you have any questions, you can contact us at <a href="mailto:creatorSshieldcommunity@gmail.com">creatorSshieldcommunity@gmail.com</a>. You can also send personal feedback to the Creator Shield community through the 'Send Feedback' option on your dashboard.</p>
-        <p>Sincerely,<br/>The CreatorShield Team</p>
-      </div>
-    `,
-  },
-  urgent: {
-    name: 'Urgent - Priority Action',
-    body: (name: string, date: string, url: string) => `
-      <div style="font-family: sans-serif; line-height: 1.6;">
-        <p>Hi ${name},</p>
-        <p><strong>This is an urgent update regarding your copyright strike request for ${url} (from ${date}).</strong></p>
-        <p>Our team has reviewed and approved your request on a priority basis. We are initiating the takedown procedure immediately.</p>
-        <p>Please monitor your dashboard for further updates from the platform. We understand the importance of this matter and are treating it with the highest priority.</p>
-        <p>Thank you for your prompt action.</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p style="font-size: 0.9em; color: #555;">If you have any questions, you can contact us at <a href="mailto:creatorSshieldcommunity@gmail.com">creatorSshieldcommunity@gmail.com</a>. You can also send personal feedback to the Creator Shield community through the 'Send Feedback' option on your dashboard.</p>
-        <p>Sincerely,<br/>The CreatorShield Team</p>
-      </div>
-    `,
-  },
-};
-
-const denialEmailTemplates = {
-  standard: {
-    name: 'Standard Denial Notice',
-    body: (name: string, url: string, reason: string) => `
-      <div style="font-family: sans-serif; line-height: 1.6;">
-        <p>Hi ${name},</p>
-        <p>Thank you for submitting your copyright strike request for the content at <strong>${url}</strong>.</p>
-        <p>After a careful review, we have decided not to proceed with this takedown request at this time. Here is the reason for this decision:</p>
-        <blockquote style="border-left: 4px solid #ccc; padding-left: 1rem; margin-left: 0; font-style: italic;">
-          ${reason || 'No specific reason provided.'}
-        </blockquote>
-        <p>We understand this may not be the outcome you hoped for. If you have new information or believe this decision was made in error, you can resubmit your request with additional details.</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p style="font-size: 0.9em; color: #555;">If you have any questions, you can contact us at <a href="mailto:creatorSshieldcommunity@gmail.com">creatorSshieldcommunity@gmail.com</a>. You can also send personal feedback to the Creator Shield community through the 'Send Feedback' option on your dashboard.</p>
-        <p>Sincerely,<br/>The CreatorShield Team</p>
-      </div>
-    `,
-  },
-};
+import { unifiedEmailTemplates } from '@/lib/unified-email-templates';
 
 
 export default function StrikeDetailsClientPage({ initialStrike }: { initialStrike: Report | undefined }) {
@@ -146,14 +95,40 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
 
   const getApprovalPreviewHtml = () => {
     if (!strike) return '';
-    const template = emailTemplates[selectedTemplate as keyof typeof emailTemplates];
-    const submissionDate = new Date(strike.submitted).toLocaleDateString();
-    return template.body(strike.creatorName, submissionDate, strike.suspectUrl);
+    
+    // Use unified template for preview
+    const emailData = {
+      firstName: strike.creatorName.split(' ')[0] || strike.creatorName,
+      actionType: 'Copyright Strike Request',
+      status: 'Approved',
+      timestamp: new Date().toLocaleString(),
+      referenceId: `STRIKE-${Date.now()}`,
+      customMessage: `Your copyright strike request for the content at ${strike.suspectUrl} has been reviewed and approved by our team. We will now proceed with the formal takedown process with the concerned platform.`,
+      dashboardLink: 'https://creatorshield.com/dashboard',
+      reportLink: 'https://creatorshield.com/reports'
+    };
+    
+    const emailContent = unifiedEmailTemplates.generateTemplate(emailData);
+    return emailContent.html;
   };
   
   const getDenialPreviewHtml = () => {
     if (!strike) return '';
-    return denialEmailTemplates.standard.body(strike.creatorName, strike.suspectUrl, denialReason);
+    
+    // Use unified template for denial preview
+    const emailData = {
+      firstName: strike.creatorName.split(' ')[0] || strike.creatorName,
+      actionType: 'Copyright Strike Request',
+      status: 'Rejected',
+      timestamp: new Date().toLocaleString(),
+      referenceId: `STRIKE-${Date.now()}`,
+      customMessage: `After careful review, we have decided not to proceed with your takedown request for ${strike.suspectUrl}. Reason: ${denialReason || 'No specific reason provided.'} If you have new information or believe this decision was made in error, you can resubmit your request with additional details.`,
+      dashboardLink: 'https://creatorshield.com/dashboard',
+      reportLink: 'https://creatorshield.com/reports'
+    };
+    
+    const emailContent = unifiedEmailTemplates.generateTemplate(emailData);
+    return emailContent.html;
   }
 
   const getStatusVariant = (status?: Report['status']) => {
@@ -324,11 +299,12 @@ export default function StrikeDetailsClientPage({ initialStrike }: { initialStri
                     <SelectValue placeholder="Select a template" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(emailTemplates).map(([id, { name }]) => (
-                      <SelectItem key={id} value={id}>
-                        {name}
+                    <SelectItem value="standard">
+                      Standard Approval Notice
+                    </SelectItem>
+                    <SelectItem value="urgent">
+                      Urgent - Priority Action
                       </SelectItem>
-                    ))}
                   </SelectContent>
                 </Select>
               </div>

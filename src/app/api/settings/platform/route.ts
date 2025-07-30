@@ -17,8 +17,10 @@ export async function GET() {
       allowRegistrations: settings.allowRegistrations,
       strikeThreshold: settings.strikeThreshold,
       notificationEmail: settings.notificationEmail,
+      secondaryNotificationEmail: settings.secondaryNotificationEmail || 'contactpradeeprajput@gmail.com',
       notifyOnStrikes: settings.notifyOnStrikes,
       notifyOnReactivations: settings.notifyOnReactivations,
+      notifyOnNewRegistrations: settings.notifyOnNewRegistrations !== false, // Default to true
       matchThreshold: settings.matchThreshold,
     });
   } catch (error) {
@@ -49,11 +51,17 @@ export async function PATCH(req: Request) {
     if (body.notificationEmail !== undefined) {
       settings.notificationEmail = body.notificationEmail;
     }
+    if (body.secondaryNotificationEmail !== undefined) {
+      settings.secondaryNotificationEmail = body.secondaryNotificationEmail;
+    }
     if (body.notifyOnStrikes !== undefined) {
       settings.notifyOnStrikes = body.notifyOnStrikes;
     }
     if (body.notifyOnReactivations !== undefined) {
       settings.notifyOnReactivations = body.notifyOnReactivations;
+    }
+    if (body.notifyOnNewRegistrations !== undefined) {
+      settings.notifyOnNewRegistrations = body.notifyOnNewRegistrations;
     }
     if (body.matchThreshold !== undefined) {
       settings.matchThreshold = body.matchThreshold;

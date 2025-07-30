@@ -5,9 +5,14 @@ import Violation from '../models/Violation';
 
 export async function createViolation(data: any) {
   try {
-    await Violation.create(data);
+    const violation = await Violation.create(data);
+    return {
+      id: violation._id.toString(),
+      ...violation.toObject()
+    };
   } catch (err) {
     console.error('Error creating violation:', err);
+    throw err;
   }
 }
 

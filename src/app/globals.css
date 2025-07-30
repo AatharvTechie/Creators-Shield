@@ -196,9 +196,29 @@ span {
 }
 
 @keyframes zoom-in {
-  0% { transform: scale(0.7); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
+
 .animate-zoom-in {
-  animation: zoom-in 0.3s cubic-bezier(0.4,0,0.2,1);
+  animation: zoom-in 0.5s ease-out;
+}
+
+@keyframes bounce-x {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+.animate-bounce-x {
+  animation: bounce-x 1s infinite;
 }

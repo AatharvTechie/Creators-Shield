@@ -2,15 +2,21 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getChannelStats } from '@/lib/services/youtube-service';
+import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
 import { getUserByEmail, updateUser } from '@/lib/users-store';
 
 export async function connectYouTubeChannelAction(channelId: string, userEmail: string) {
   try {
     console.log('🔍 Connecting YouTube channel:', channelId, 'for user:', userEmail);
     
-    const stats = await getChannelStats(channelId);
+    // Fetch both channel stats and most viewed video
+    const [stats, mostViewedVideo] = await Promise.all([
+      getChannelStats(channelId),
+      getMostViewedVideo(channelId)
+    ]);
+    
     console.log('📊 YouTube stats:', stats);
+    console.log('🎥 Most viewed video:', mostViewedVideo);
     
     if (!stats) {
       return { success: false, message: "Could not find a YouTube channel with that ID. Please check and try again." };
@@ -29,7 +35,13 @@ export async function connectYouTubeChannelAction(channelId: string, userEmail: 
         id: channelId,
         title: stats.title || user.displayName,
         thumbnail: stats.avatar || user.avatar,
-        url: stats.url // <-- Add url property
+        url: stats.url,
+        subscriberCount: stats.subscribers.toString(),
+        viewCount: stats.views.toString(),
+        mostViewedVideo: {
+          title: mostViewedVideo.title || 'No video found',
+          viewCount: mostViewedVideo.views.toString()
+        }
       },
       youtubeChannelId: channelId, // Save channel ID separately for easy querying
       displayName: stats.title || user.displayName, // Update user display name from YouTube
@@ -51,16 +63,24 @@ export async function connectYouTubeChannelAction(channelId: string, userEmail: 
     revalidatePath('/dashboard', 'layout');
     revalidatePath('/admin/users', 'page');
     revalidatePath('/admin/overview', 'page');
-    revalidatePath('/dashboard/settings', 'page');
+    revalidatePath('/dashboard/overview', 'page');
+    revalidatePath('/dashboard/analytics', 'page');
 
-    return { success: true, message: `Successfully connected to channel: ${stats.title}` };
-
+    return { 
+      success: true, 
+      message: `Successfully connected to ${stats.title}`,
+      channelData: {
+        title: stats.title,
+        subscribers: stats.subscribers,
+        views: stats.views,
+        mostViewedVideo: mostViewedVideo
+      }
+    };
   } catch (error) {
-    console.error("❌ Error connecting YouTube channel:", error);
-    const message = error instanceof Error ? error.message : "An unknown error occurred.";
-    if (message.includes("404")) {
-      return { success: false, message: "Could not find a YouTube channel with that ID. Please check it and try again." };
-    }
-    return { success: false, message: "An error occurred while connecting to YouTube." };
+    console.error('❌ Error connecting YouTube channel:', error);
+    return { 
+      success: false, 
+      message: error instanceof Error ? error.message : "Failed to connect YouTube channel. Please try again." 
+    };
   }
 }

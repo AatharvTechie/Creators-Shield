@@ -2,8 +2,8 @@ import { getUserById } from '@/lib/users-store';
 import DetailsClientPage from './details-client-page';
 import type { User } from '@/lib/types';
 
-export default async function UserDetailsPage({ params }: { params: { userId: string } }) {
-  const userId = params.userId;
+export default async function UserDetailsPage({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params;
   let user: User | undefined = undefined;
 
   if (userId) {

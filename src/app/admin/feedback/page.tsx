@@ -34,7 +34,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Send } from 'lucide-react';
 import type { Feedback, FeedbackReply } from '@/lib/types';
 import { getAllFeedbackFromDb, approveDisconnectForCreator, isDisconnectApproved } from '@/lib/feedback-store';
-import { replyToFeedbackAction } from './actions';
+import { replyToFeedbackAction, approveDisconnectAction, markFeedbackAsReadAction } from './actions';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
@@ -95,27 +95,21 @@ export default function AdminFeedbackPage() {
     }
 
     console.log('Admin feedback - Sending reply:', { feedbackId, creatorId, message: replyMessage });
-    console.log('Admin feedback - Selected feedback data for reply:', selectedFeedback);
 
     const result = await replyToFeedbackAction(feedbackId, replyMessage, creatorId);
 
     if (result.success) {
       toast({
         title: 'Reply Sent',
-        description: 'Your response has been sent to the creator.',
+        description: result.message,
       });
-      // Remove the feedback from the list after reply
-      setFeedbackList(prev => prev.filter(item => {
-        const itemId = item._id || item.feedbackId;
-        const selectedId = selectedFeedback._id || selectedFeedback.feedbackId;
-        return itemId !== selectedId;
-      }));
-      setSelectedFeedback(null);
       setReplyMessage('');
+      setSelectedFeedback(null);
+      loadFeedback();
     } else {
       toast({
         variant: 'destructive',
-        title: 'Failed to Send Reply',
+        title: 'Error',
         description: result.message,
       });
     }
@@ -123,27 +117,42 @@ export default function AdminFeedbackPage() {
   };
   
   const handleApproveDisconnect = async (creatorEmail: string) => {
-    if (!creatorEmail) {
+    if (!selectedFeedback) return;
+    
+    const creatorId = selectedFeedback.creatorId;
+    if (!creatorId) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Creator email not found.',
+        description: 'Creator ID not found.',
       });
       return;
     }
-    approveDisconnectForCreator(creatorEmail);
-    toast({ title: 'Disconnect Approved', description: 'The creator can now disconnect their channel.' });
+
+    const result = await approveDisconnectAction(creatorId, creatorEmail);
+    
+    if (result.success) {
+      toast({ 
+        title: 'Disconnect Approved', 
+        description: result.message 
+      });
     setSelectedFeedback(null);
     loadFeedback();
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: result.message,
+      });
+    }
   };
 
   const handleMarkAsRead = async (feedbackId: string) => {
     if (!selectedFeedback) return;
     
-    try {
-      // Use _id as feedbackId from the API response
       const actualFeedbackId = feedbackId || selectedFeedback._id || selectedFeedback.feedbackId;
-      const creatorId = selectedFeedback.creatorId; // Use the actual creatorId from the feedback data
+    const creatorId = selectedFeedback.creatorId;
+    const feedbackTitle = selectedFeedback.title;
       
       if (!creatorId) {
         toast({
@@ -164,43 +173,25 @@ export default function AdminFeedbackPage() {
       }
       
       console.log('Admin feedback - Marking as read:', { feedbackId: actualFeedbackId, creatorId });
-      console.log('Admin feedback - Selected feedback data for mark as read:', selectedFeedback);
-      
-      // Call the mark as read API
-      const response = await fetch('/api/feedback/mark-read', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          feedbackId: actualFeedbackId,
-          creatorId: creatorId,
-        }),
-      });
+    
+    const result = await markFeedbackAsReadAction(actualFeedbackId, creatorId, feedbackTitle);
 
-      if (response.ok) {
+    if (result.success) {
         // Update the status in the list instantly
         setFeedbackList(prev => prev.map(item => {
           const itemId = item._id || item.feedbackId;
           const selectedId = selectedFeedback._id || selectedFeedback.feedbackId;
           return itemId === selectedId ? { ...item, status: 'admin_read' } : item;
         }));
-        toast({ title: 'Marked as Read', description: 'Feedback marked as read.' });
-      } else {
-        const errorData = await response.json();
-        console.error('Mark as read error:', errorData);
         toast({ 
-          variant: 'destructive', 
-          title: 'Error', 
-          description: 'Failed to mark feedback as read.' 
+        title: 'Marked as Read', 
+        description: result.message 
         });
-      }
-    } catch (error) {
-      console.error('Error marking feedback as read:', error);
+    } else {
       toast({ 
         variant: 'destructive', 
         title: 'Error', 
-        description: 'Failed to mark feedback as read.' 
+        description: result.message 
       });
     }
   };

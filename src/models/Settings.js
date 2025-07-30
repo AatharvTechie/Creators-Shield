@@ -5,8 +5,10 @@ const settingsSchema = new mongoose.Schema({
   allowRegistrations: { type: Boolean, default: true },
   strikeThreshold: { type: Number, default: 3 },
   notificationEmail: { type: String, default: 'admin-alerts@creatorshield.com' },
+  secondaryNotificationEmail: { type: String, default: 'contactpradeeprajput@gmail.com' },
   notifyOnStrikes: { type: Boolean, default: true },
   notifyOnReactivations: { type: Boolean, default: true },
+  notifyOnNewRegistrations: { type: Boolean, default: true },
   matchThreshold: { type: Number, default: 85 }, // Content monitoring threshold percentage
   
   // Timestamps

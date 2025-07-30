@@ -2,7 +2,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { FaShieldAlt, FaRegSmile, FaRocket, FaRegLightbulb, FaStar, FaHandshake, FaLock, FaUsers, FaCrown, FaGem } from "react-icons/fa";
+import { FaShieldAlt, FaRegSmile, FaRocket, FaRegLightbulb, FaStar, FaHandshake, FaLock, FaUsers, FaCrown, FaGem, FaCalendar, FaClock, FaCheck } from "react-icons/fa";
+import { Button } from "@/components/ui/button";
+import { WhatsAppButton, WhatsAppLink } from "@/components/ui/whatsapp-button";
 
 function useScrollFadeIn() {
   const ref = useRef<HTMLDivElement>(null);
@@ -106,13 +108,19 @@ export default function Home() {
           <h1 className="text-6xl md:text-7xl font-extrabold mb-6 drop-shadow-xl tracking-tight leading-tight animate-fade-in">
             Protect. Monetize. <span className="text-blue-400">Create.</span>
           </h1>
-          <p className="mb-10 text-2xl md:text-3xl text-gray-200 font-medium drop-shadow animate-fade-in delay-100">
-            The all-in-one platform for digital creators to secure content, grow audience, and get paid.
+          <p className="text-xl md:text-2xl text-blue-200 mb-8 leading-relaxed animate-fade-in delay-200">
+            The ultimate platform for content creators to protect their work, maximize revenue, and focus on what matters most - creating amazing content.
           </p>
-          <div className="flex flex-col sm:flex-row gap-8 justify-center mb-8 animate-fade-in delay-200">
-            <button onClick={() => setShowDialog(true)} className="bg-gradient-to-r from-blue-500 to-light-green-500 hover:from-blue-600 hover:to-light-green-600 text-white font-bold py-5 px-16 rounded-full text-2xl shadow-2xl transition-transform transform hover:scale-105 focus:scale-105 focus:outline-none">Get Started</button>
-            <Link href="/choose-dashboard" className="bg-white/10 hover:bg-white/20 text-white font-semibold py-5 px-16 rounded-full text-2xl shadow transition-transform transform hover:scale-105 focus:scale-105 focus:outline-none">Login</Link>
-            <Link href="/plans" className="bg-white/10 hover:bg-white/20 text-white font-semibold py-5 px-16 rounded-full text-2xl shadow transition-transform transform hover:scale-105 focus:scale-105 focus:outline-none">View Plans</Link>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in delay-400">
+            <Button onClick={handlePlanClick} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-bold py-4 px-8 rounded-full shadow-lg transition-all duration-200 transform hover:scale-105">
+              Start Free Trial
+            </Button>
+            <Button variant="outline" onClick={() => setShowDialog(true)} className="border-2 border-blue-400 text-blue-300 hover:bg-blue-400 hover:text-white text-lg font-bold py-4 px-8 rounded-full transition-all duration-200 transform hover:scale-105">
+              Watch Demo
+            </Button>
+            <Link href="/faq" className="text-blue-300 hover:text-blue-200 text-lg font-semibold underline">
+              Learn More
+            </Link>
           </div>
         </div>
       </div>
@@ -213,63 +221,165 @@ export default function Home() {
       {/* Subscription Plans Preview - 3 columns */}
       <section ref={plansRef} className={`max-w-6xl mx-auto py-20 px-8 text-center transition-all duration-700 ${plansVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <h2 className="text-4xl font-bold mb-10 text-blue-300">Subscription Plans</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 justify-center mb-8">
+        <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
+          All plans include complete access to all features. Choose the duration that works best for you.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center mb-8">
           {[
             {
             name: "Free Trial",
             price: "$0",
-            desc: "7 days access",
-              color: "blue",
-              icon: <FaCrown className="text-5xl text-blue-400 mb-4 mx-auto" />,
+              desc: "7 days access to all features",
+              color: "purple",
+              icon: <FaCrown className="text-4xl text-purple-400 mb-4" />,
+              duration: "7 Days",
+              responseTime: "24-48h",
               features: [
-                "All premium features",
-                "Priority support",
-                "Secure payments"
-              ]
+                "Unlimited YouTube Channels",
+                "Unlimited video monitoring",
+                "Unlimited violation detection",
+                "Unlimited DMCA requests",
+                "Advanced analytics & reports",
+                "Multi-platform monitoring",
+                "Real-time alerts",
+                "Email templates",
+                "Violation history",
+                "Custom branding",
+                "API access",
+                "Legal consultation",
+                "Bulk operations",
+                "Predictive analytics",
+                "Priority queue processing",
+                "Custom integrations",
+                "Team management",
+                "Advanced AI protection"
+              ],
+              highlight: "Perfect for testing all features"
             },
             {
             name: "Monthly",
-            price: "$50",
+            price: "$70",
             desc: "per month",
-              color: "light-green",
-              icon: <FaGem className="text-5xl text-light-green-400 mb-4 mx-auto" />,
+              color: "blue",
+              icon: <FaGem className="text-4xl text-blue-400 mb-4" />,
+              duration: "1 Month",
+              responseTime: "7h",
               features: [
-                "All premium features",
-                "Priority support",
-                "Cancel anytime"
-              ]
+                "Unlimited YouTube Channels",
+                "Unlimited video monitoring",
+                "Unlimited violation detection",
+                "Unlimited DMCA requests",
+                "Advanced analytics & reports",
+                "Multi-platform monitoring",
+                "Real-time alerts",
+                "Email templates",
+                "Violation history",
+                "Custom branding",
+                "API access",
+                "Legal consultation",
+                "Bulk operations",
+                "Predictive analytics",
+                "Priority queue processing",
+                "Custom integrations",
+                "Team management",
+                "Advanced AI protection"
+              ],
+              highlight: "Most popular choice"
             },
             {
             name: "Yearly",
-            price: "$50",
+            price: "$500",
             desc: "per year",
-              color: "red",
-              icon: <FaRocket className="text-5xl text-red-400 mb-4 mx-auto" />,
+              color: "green",
+              icon: <FaRocket className="text-4xl text-green-400 mb-4" />,
+              duration: "1 Year",
+              responseTime: "7h",
               features: [
-                "All premium features",
-                "Priority support",
-                "Best value"
-              ]
+                "Unlimited YouTube Channels",
+                "Unlimited video monitoring",
+                "Unlimited violation detection",
+                "Unlimited DMCA requests",
+                "Advanced analytics & reports",
+                "Multi-platform monitoring",
+                "Real-time alerts",
+                "Email templates",
+                "Violation history",
+                "Custom branding",
+                "API access",
+                "Legal consultation",
+                "Bulk operations",
+                "Predictive analytics",
+                "Priority queue processing",
+                "Custom integrations",
+                "Team management",
+                "Advanced AI protection",
+                "Dedicated account manager"
+              ],
+              highlight: "Best value for long-term"
             }
           ].map((plan, i) => (
             <div
               key={i}
-              className={`bg-white/10 backdrop-blur-lg border-2 border-${plan.color}-500 rounded-3xl p-12 flex flex-col items-center min-w-[260px] shadow-2xl hover:shadow-3xl transition-transform transform hover:-translate-y-2 hover:scale-105 animate-fade-in-up delay-${i * 100}`}
+              className={`relative bg-gray-800 border border-gray-600 rounded-2xl p-6 flex flex-col items-center min-w-[280px] shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-2 hover:scale-105 animate-fade-in-up delay-${i * 100} ${
+                plan.name === "Monthly" ? "ring-2 ring-blue-500 bg-blue-900" : ""
+              }`}
             >
+              {/* Popular Badge */}
+              {plan.name === "Monthly" && (
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                  <span className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-xs font-bold">
+                    Most Popular
+                  </span>
+                </div>
+              )}
+              
               {plan.icon}
-              <div className="text-3xl font-bold mb-2 text-white">{plan.name}</div>
-              <div className="text-5xl font-extrabold mb-2 text-blue-200">{plan.price}</div>
-              <div className="mb-2 text-gray-300 text-xl">{plan.desc}</div>
-              <ul className="mb-6 space-y-2 w-full max-w-xs mx-auto text-left">
-                {plan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-center text-gray-100 text-base"><span className="mr-2 text-green-400">✔️</span> {feature}</li>
-                ))}
-              </ul>
-              <Link href="/plans" className={`mt-2 inline-block bg-gradient-to-r from-${plan.color}-500 to-blue-500 hover:from-${plan.color}-600 hover:to-blue-600 text-white font-bold py-2 px-8 rounded-full shadow-lg text-lg transition-transform transform hover:scale-105`}>Choose Plan</Link>
+                              <div className="text-2xl font-bold mb-2 text-white">{plan.name}</div>
+                <div className="text-3xl font-extrabold mb-1 text-blue-400">{plan.price}</div>
+                <div className="mb-3 text-gray-300 text-sm">{plan.desc}</div>
+              
+              {/* Duration & Response Time */}
+                              <div className="flex justify-center space-x-4 mb-4">
+                  <div className="flex items-center text-xs text-gray-300">
+                    <FaCalendar className="mr-1 text-blue-400" />
+                    {plan.duration}
+                  </div>
+                  <div className="flex items-center text-xs text-gray-300">
+                    <FaClock className="mr-1 text-green-400" />
+                    {plan.responseTime}
+                  </div>
+                </div>
+
+                {/* Highlight */}
+                <div className="bg-blue-500 rounded-lg p-2 mb-4 w-full">
+                  <p className="text-white text-xs font-medium">{plan.highlight}</p>
+                </div>
+              
+              {/* Features - Show only first 3 */}
+              <div className="mb-4 w-full">
+                <h4 className="text-xs font-semibold text-green-400 mb-2">✅ All Features Included</h4>
+                <ul className="space-y-1 text-left">
+                  {plan.features.slice(0, 3).map((feature, idx) => (
+                    <li key={idx} className="flex items-center text-gray-200 text-xs">
+                      <FaCheck className="mr-2 text-green-400 flex-shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                  <li className="text-blue-400 text-xs font-medium">
+                    +{plan.features.length - 3} more features
+                    </li>
+                </ul>
+              </div>
+
+              <Link href="/plans" className={`mt-auto inline-block bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-xl shadow-lg text-sm transition-all duration-200 transform hover:scale-105`}>
+                View All Features
+              </Link>
             </div>
           ))}
         </div>
-        <Link href="/plans" className="inline-block mt-6 bg-gradient-to-r from-blue-500 to-light-green-500 hover:from-blue-600 hover:to-light-green-600 text-white font-bold py-4 px-14 rounded-full shadow-lg text-2xl transition-transform transform hover:scale-105">View All Plans</Link>
+        <Link href="/plans" className="inline-block mt-8 bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-12 rounded-xl shadow-lg text-xl transition-all duration-200 transform hover:scale-105">
+          View All Plans
+        </Link>
       </section>
 
       {/* Our Commitment */}
@@ -289,18 +399,185 @@ export default function Home() {
       <section ref={collabRef} className={`max-w-6xl mx-auto py-16 px-8 text-center transition-all duration-700 ${collabVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <h2 className="text-3xl font-bold mb-10 text-yellow-200">Our Collaborators</h2>
         <div className="flex flex-wrap gap-12 justify-center items-center">
-          {/* Replace with real logos or names as needed */}
-          <div className="bg-white/10 rounded-xl px-12 py-6 text-3xl font-semibold text-white shadow">YouTube</div>
-          <div className="bg-white/10 rounded-xl px-12 py-6 text-3xl font-semibold text-white shadow">Instagram</div>
-          <div className="bg-white/10 rounded-xl px-12 py-6 text-3xl font-semibold text-white shadow">Spotify</div>
-          <div className="bg-white/10 rounded-xl px-12 py-6 text-3xl font-semibold text-white shadow">Meta</div>
-          <div className="bg-white/10 rounded-xl px-12 py-6 text-3xl font-semibold text-white shadow">More...</div>
+          {/* YouTube */}
+          <div className="bg-white/10 rounded-xl px-8 py-6 flex items-center gap-3 shadow">
+            <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+            </svg>
+            <span className="text-2xl font-semibold text-white">YouTube</span>
+          </div>
+          
+          {/* Instagram */}
+          <div className="bg-white/10 rounded-xl px-8 py-6 flex items-center gap-3 shadow">
+            <svg className="w-8 h-8 text-pink-500" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+            </svg>
+            <span className="text-2xl font-semibold text-white">Instagram</span>
+          </div>
+          
+          {/* TikTok */}
+          <div className="bg-white/10 rounded-xl px-8 py-6 flex items-center gap-3 shadow">
+            <svg className="w-8 h-8 text-black" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.69-1.35 3.95-.5.84-1.31 1.5-2.15 2.06-1.31.83-2.72 1.31-4.24 1.35-1.59.05-3.08-.31-4.46-.87-1.41-.58-2.53-1.5-3.41-2.72-.88-1.22-1.36-2.62-1.42-4.12-.05-1.65.28-3.15 1.04-4.55.76-1.4 1.83-2.51 3.13-3.34 1.3-.83 2.76-1.3 4.35-1.4.01-.01.01-.01.02-.01v4.03c-.01.01-.02.01-.03.01-.99.01-1.89.35-2.68.87-.79.52-1.42 1.21-1.89 2.03-.47.82-.71 1.72-.71 2.69 0 .97.24 1.87.71 2.69.47.82 1.1 1.51 1.89 2.03.79.52 1.69.86 2.68.87.99.01 1.89-.35 2.68-.87.79-.52 1.42-1.21 1.89-2.03.47-.82.71-1.72.71-2.69 0-.97-.24-1.87-.71-2.69-.47-.82-1.1-1.51-1.89-2.03-.79-.52-1.69-.86-2.68-.87v-4.03c1.31.02 2.61.01 3.91.02z"/>
+            </svg>
+            <span className="text-2xl font-semibold text-white">TikTok</span>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="max-w-6xl mx-auto py-20 px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4 text-blue-300">Frequently Asked Questions</h2>
+          <p className="text-xl text-gray-300">Everything you need to know about CreatorShield</p>
+        </div>
+        
+        <div className="space-y-6">
+          {/* First Row - 2 Questions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* FAQ Item 1 */}
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 cursor-pointer group">
+              <h3 className="text-xl font-bold mb-4 text-white">How does CreatorShield protect my content?</h3>
+              <p className="text-gray-300 mb-4">
+                CreatorShield uses advanced AI technology to continuously monitor multiple platforms for unauthorized use of your content. When violations are detected, we automatically generate DMCA takedown requests and provide you with detailed reports.
+              </p>
+              <Link href="/features/protection" className="flex items-center text-blue-300 text-sm group-hover:text-blue-200 transition-colors">
+                <span>Learn more about our protection system</span>
+                <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+            {/* FAQ Item 2 */}
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-green-500/30 hover:border-green-400/50 transition-all duration-300 cursor-pointer group">
+              <h3 className="text-xl font-bold mb-4 text-white">What platforms do you monitor?</h3>
+              <p className="text-gray-300 mb-4">
+                We currently monitor YouTube, Instagram, TikTok, and other major social media platforms. Our system automatically scans for reuploads, reposts, and unauthorized use of your original content across these platforms.
+              </p>
+              <Link href="/features/platforms" className="flex items-center text-green-300 text-sm group-hover:text-green-200 transition-colors">
+                <span>View all supported platforms</span>
+                <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+          {/* Second Row - 1 Question (Centered) */}
+          <div className="flex justify-center">
+            {/* FAQ Item 3 */}
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 cursor-pointer group max-w-4xl">
+              <h3 className="text-xl font-bold mb-4 text-white">How quickly can you remove unauthorized content?</h3>
+              <p className="text-gray-300 mb-4">
+                Our automated system typically processes takedown requests within 24-48 hours. For urgent cases, our premium plans offer expedited processing. We also provide real-time notifications so you're always informed about the status of your requests.
+              </p>
+              <Link href="/features/response-times" className="flex items-center text-purple-300 text-sm group-hover:text-purple-200 transition-colors">
+                <span>Learn about our response times</span>
+                <svg className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </div>
+        
+        {/* View All FAQs Link */}
+        <div className="text-center mt-12">
+          <Link href="/faq" className="inline-flex items-center gap-2 text-blue-300 hover:text-blue-200 transition-colors group">
+            <span className="text-lg font-semibold">View All FAQs</span>
+            <svg className="w-5 h-5 animate-bounce-x group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+      </section>
+
+      {/* Contact Support */}
+      <section className="max-w-6xl mx-auto py-20 px-8">
+        <div className="text-center">
+          <div className="bg-blue-600/20 backdrop-blur-lg rounded-xl p-8 border border-blue-400/30">
+            <h3 className="text-2xl font-bold mb-4 text-white">Still have questions?</h3>
+            <p className="text-gray-200 mb-6">Our creator support team is here to help you 24/7</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a href="mailto:support@creatorshield.com" className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors">
+                📧 Email Support
+              </a>
+              <WhatsAppButton 
+                className="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors"
+                customMessage="I need help with CreatorShield"
+              >
+                Live Chat (WhatsApp)
+              </WhatsAppButton>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="max-w-6xl mx-auto py-20 px-8">
+        <div className="text-center">
+          <div className="bg-green-600/20 backdrop-blur-lg rounded-xl p-8 border border-green-400/30">
+            <h2 className="text-2xl font-bold mb-4 text-white">Ready to protect your content?</h2>
+            <p className="text-gray-200 mb-6">Join thousands of creators who trust CreatorShield</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/auth/register" className="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors">
+                Start Free Trial
+              </Link>
+              <Link href="/plans" className="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition-colors">
+                View Plans
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="mt-auto py-10 text-center text-gray-400 text-xl bg-[#1a223f]/90 border-t border-gray-700">
+      <footer className="mt-auto py-10 bg-[#1a223f]/90 border-t border-gray-700">
+        <div className="max-w-6xl mx-auto px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Company Info */}
+            <div className="col-span-1 md:col-span-2">
+              <h3 className="text-2xl font-bold text-blue-300 mb-4">CreatorShield</h3>
+              <p className="text-gray-300 mb-4">
+                Protecting creators worldwide with advanced AI-powered content protection and copyright management.
+              </p>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-400 hover:text-blue-300 transition-colors">Twitter</a>
+                <a href="#" className="text-gray-400 hover:text-blue-300 transition-colors">LinkedIn</a>
+                <a href="#" className="text-gray-400 hover:text-blue-300 transition-colors">YouTube</a>
+              </div>
+            </div>
+            
+            {/* Quick Links */}
+            <div>
+              <h4 className="text-lg font-semibold text-white mb-4">Quick Links</h4>
+              <ul className="space-y-2">
+                <li><Link href="/plans" className="text-gray-300 hover:text-blue-300 transition-colors">Plans</Link></li>
+                <li><Link href="/faq" className="text-gray-300 hover:text-blue-300 transition-colors">FAQ</Link></li>
+                <li><Link href="/auth/login" className="text-gray-300 hover:text-blue-300 transition-colors">Login</Link></li>
+                <li><Link href="/auth/register" className="text-gray-300 hover:text-blue-300 transition-colors">Register</Link></li>
+              </ul>
+            </div>
+            
+            {/* Support */}
+            <div>
+              <h4 className="text-lg font-semibold text-white mb-4">Support</h4>
+              <ul className="space-y-2">
+                <li><a href="mailto:support@creatorshield.com" className="text-gray-300 hover:text-blue-300 transition-colors">Email Support</a></li>
+                <li><WhatsAppLink className="text-gray-300 hover:text-blue-300 transition-colors">
+                  WhatsApp Support
+                </WhatsAppLink></li>
+                <li><a href="/help" className="text-gray-300 hover:text-blue-300 transition-colors">Help Center</a></li>
+                <li><Link href="/contacts" className="text-gray-300 hover:text-blue-300 transition-colors">Contact Us</Link></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-700 mt-8 pt-8 text-center">
+            <Link href="/legal/rights" className="text-gray-400 hover:text-blue-300 transition-colors">
         &copy; {new Date().getFullYear()} CreatorShield. All rights reserved.
+            </Link>
+          </div>
+        </div>
       </footer>
     </div>
   );
