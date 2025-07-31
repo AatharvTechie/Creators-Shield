@@ -4,7 +4,7 @@
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useDashboardData } from "@/app/dashboard/dashboard-context";
@@ -18,14 +18,9 @@ import {
   ShieldAlert, 
   FileText, 
   Settings, 
-  Users, 
-  Zap,
-  Crown,
-  Lock,
   MessageSquare,
-  Brain,
-  Gavel,
-  Target
+  Crown,
+  Lock
 } from "lucide-react";
 
 const NextLink = Link;
@@ -64,7 +59,7 @@ export function CreatorSidebar() {
     }
   };
 
-  // All menu items available for all plans
+  // Sidebar menu items in the specified pattern
   const menuItems = [
     { 
       href: '/dashboard/overview', 
@@ -113,48 +108,6 @@ export function CreatorSidebar() {
       label: 'Feedback & Support', 
       icon: MessageSquare, 
       requiresConnection: false
-    },
-    { 
-      href: '/dashboard/advanced-analytics', 
-      label: 'Advanced Analytics', 
-      icon: Target, 
-      requiresConnection: false
-    },
-    { 
-      href: '/dashboard/legal-consultation', 
-      label: 'Legal Consultation', 
-      icon: Gavel, 
-      requiresConnection: false
-    },
-    { 
-      href: '/dashboard/bulk-operations', 
-      label: 'Bulk Operations', 
-      icon: Zap, 
-      requiresConnection: false
-    },
-    { 
-      href: '/dashboard/ai-protection', 
-      label: 'AI Protection', 
-      icon: Brain, 
-      requiresConnection: false
-    },
-    { 
-      href: '/dashboard/settings', 
-      label: 'Settings', 
-      icon: Settings, 
-      requiresConnection: false
-    },
-    { 
-      href: '/dashboard/team', 
-      label: 'Team Management', 
-      icon: Users, 
-      requiresConnection: false
-    },
-    { 
-      href: '/dashboard/integrations', 
-      label: 'Integrations', 
-      icon: Zap, 
-      requiresConnection: false
     }
   ];
 
@@ -176,12 +129,10 @@ export function CreatorSidebar() {
     return () => interval && clearInterval(interval);
   }, [user?.uid]);
   
-  // All menu items are available for all plans
   const userPlan = user?.plan || 'free';
-  const filteredMenuItems = menuItems; // No filtering needed
-
+  
   // Check if user can access features that require YouTube connection
-  const canAccessYouTubeFeatures = isYouTubeConnected; // All plans get all features
+  const canAccessYouTubeFeatures = isYouTubeConnected;
   
   return (
     <Sidebar>
@@ -200,7 +151,7 @@ export function CreatorSidebar() {
                       <Badge variant={userPlan === 'yearly' ? 'default' : userPlan === 'monthly' ? 'secondary' : 'outline'} className="text-xs">
                         {userPlan === 'free' && <Crown className="w-3 h-3 mr-1" />}
                         {userPlan === 'monthly' && <BarChart className="w-3 h-3 mr-1" />}
-                        {userPlan === 'yearly' && <Zap className="w-3 h-3 mr-1" />}
+                        {userPlan === 'yearly' && <BarChart className="w-3 h-3 mr-1" />}
                         {userPlan.charAt(0).toUpperCase() + userPlan.slice(1)} Plan
                       </Badge>
                     </div>
@@ -208,9 +159,10 @@ export function CreatorSidebar() {
             </NextLink>
         </div>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="sidebar-scrollbar">
         <SidebarMenu className="gap-4">
-          {filteredMenuItems.map((item) => {
+          {/* Main Menu Items */}
+          {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             const isDisabled = item.requiresConnection && !canAccessYouTubeFeatures;
@@ -232,8 +184,14 @@ export function CreatorSidebar() {
           })}
         </SidebarMenu>
       </SidebarContent>
-      
-      {/* Removed plan section - will be shown as popup */}
+      <SidebarFooter className="border-t border-gray-700 p-4">
+        <SidebarMenuButton asChild>
+          <NextLink href="/dashboard/settings" className="flex items-center gap-3">
+            <Settings className="h-4 w-4" />
+            <span>Settings</span>
+          </NextLink>
+        </SidebarMenuButton>
+      </SidebarFooter>
     </Sidebar>
   );
 }

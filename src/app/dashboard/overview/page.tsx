@@ -25,6 +25,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { formatNumber } from '@/lib/auth-utils';
+import { AutoConnectLoader } from '@/components/ui/loader';
 
 interface YouTubeData {
   subscribers: number;
@@ -36,7 +37,7 @@ interface YouTubeData {
 }
 
 export default function OverviewPage() {
-  const { user, usageStats, planFeatures, platformStatus } = useDashboardData();
+  const { user, usageStats, planFeatures, platformStatus, autoConnecting, loading: dashboardLoading } = useDashboardData();
   const [youtubeData, setYoutubeData] = useState<YouTubeData | null>(null);
   const [loading, setLoading] = useState(false);
   
@@ -78,6 +79,23 @@ export default function OverviewPage() {
 
     fetchYouTubeData();
   }, [hasYouTubeChannel, user?.email, user?.youtubeChannel?.id, user?.youtubeChannelId]);
+
+  // Show auto-connect loader when connecting channels
+  if (autoConnecting) {
+    return <AutoConnectLoader message="Connecting your YouTube channel..." />;
+  }
+
+  // Show loading state when dashboard is loading
+  if (dashboardLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
   
   if (!user) {
     return (
@@ -85,10 +103,10 @@ export default function OverviewPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-500">Loading dashboard...</p>
-            </div>
         </div>
+      </div>
     );
-}
+  }
 
   const userPlan = user.plan || 'free';
   const limits = planFeatures.checkUsageLimits();
@@ -96,16 +114,16 @@ export default function OverviewPage() {
 
   // Calculate usage percentages
   const youtubeChannelUsage = planFeatures.isUnlimited('maxYouTubeChannels') ? 0 : 
-    (usageStats.youtubeChannels / planFeatures.getFeatureLimit('maxYouTubeChannels')) * 100;
+    (usageStats.youtubeChannels / (typeof planFeatures.getFeatureLimit('maxYouTubeChannels') === 'number' ? planFeatures.getFeatureLimit('maxYouTubeChannels') : 1)) * 100;
   
-  const videoUsage = planFeatures.isUnlimited('maxVideosToMonitor') ? 0 : 
-    (usageStats.videosMonitored / planFeatures.getFeatureLimit('maxVideosToMonitor')) * 100;
+  const videoMonitoringUsage = planFeatures.isUnlimited('maxVideoMonitoring') ? 0 : 
+    (usageStats.videosMonitored / (typeof planFeatures.getFeatureLimit('maxVideoMonitoring') === 'number' ? planFeatures.getFeatureLimit('maxVideoMonitoring') : 1)) * 100;
   
-  const violationUsage = planFeatures.isUnlimited('maxViolationDetections') ? 0 : 
-    (usageStats.violationDetections / planFeatures.getFeatureLimit('maxViolationDetections')) * 100;
+  const violationDetectionUsage = planFeatures.isUnlimited('maxViolationDetection') ? 0 : 
+    (usageStats.violationDetections / (typeof planFeatures.getFeatureLimit('maxViolationDetection') === 'number' ? planFeatures.getFeatureLimit('maxViolationDetection') : 1)) * 100;
   
-  const dmcaUsage = planFeatures.isUnlimited('maxDmcaRequests') ? 0 : 
-    (usageStats.dmcaRequests / planFeatures.getFeatureLimit('maxDmcaRequests')) * 100;
+  const dmcaRequestsUsage = planFeatures.isUnlimited('maxDmcaRequests') ? 0 : 
+    (usageStats.dmcaRequests / (typeof planFeatures.getFeatureLimit('maxDmcaRequests') === 'number' ? planFeatures.getFeatureLimit('maxDmcaRequests') : 1)) * 100;
 
     return (
     <div className="space-y-6">
