@@ -31,11 +31,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import jsPDF from 'jspdf';
 import { getAllContentForUser } from "@/lib/content-store";
 import { getViolationsForUser } from "@/lib/violations-store";
-import { useSearchParams } from "next/navigation";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 import { useSession } from "next-auth/react";
 import { jwtDecode } from "jwt-decode";
-import { Suspense } from "react";
 
 const formSchema = z.object({
   originalContentId: z.string().min(1, "Please select your original content."),
@@ -53,7 +51,8 @@ function SubmitReportForm() {
   const [isFetching, setIsFetching] = useState(true);
   const [submittedReports, setSubmittedReports] = useState<Report[]>([]);
   const { toast } = useToast();
-  const searchParams = useSearchParams();
+  const [platform, setPlatform] = useState("");
+  const [suspectUrl, setSuspectUrl] = useState("");
 
   const [violations, setViolations] = useState<Violation[]>([]);
   const [protectedContent, setProtectedContent] = useState<ProtectedContent[]>([]);
@@ -61,12 +60,19 @@ function SubmitReportForm() {
   const [selectedViolationId, setSelectedViolationId] = useState<string>("");
   const [dmcaTemplate, setDmcaTemplate] = useState('');
 
+  // Get search params in useEffect to avoid SSR issues
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    setPlatform(urlParams.get('platform') || "");
+    setSuspectUrl(urlParams.get('url') || "");
+  }, []);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
         originalContentId: "",
-        platform: searchParams ? searchParams.get('platform') || "" : "",
-        suspectUrl: searchParams ? searchParams.get('url') || "" : "",
+        platform: "",
+        suspectUrl: "",
         reason: "",
     },
   });
@@ -505,13 +511,5 @@ Sincerely,
 }
 
 export default function SubmitReportPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
-      </div>
-    }>
-      <SubmitReportForm />
-    </Suspense>
-  );
+  return <SubmitReportForm />;
 }

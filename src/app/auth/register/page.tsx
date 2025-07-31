@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -14,10 +14,16 @@ function RegisterForm() {
   const [successMessage, setSuccessMessage] = useState("");
   const [registrationDisabled, setRegistrationDisabled] = useState(false);
   const [registrationMessage, setRegistrationMessage] = useState("");
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams?.get("redirect");
-  const selectedPlan = searchParams?.get("plan");
+  
+  // Get search params in useEffect to avoid SSR issues
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    setRedirectTo(urlParams.get("redirect"));
+    setSelectedPlan(urlParams.get("plan"));
+  }, []);
 
   // Check registration status on component mount
   React.useEffect(() => {
@@ -236,13 +242,5 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#181c2f] to-[#232946]">
-        <div className="text-blue-200">Loading...</div>
-      </div>
-    }>
-      <RegisterForm />
-    </Suspense>
-  );
+  return <RegisterForm />;
 } 

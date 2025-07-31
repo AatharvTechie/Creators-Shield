@@ -1,18 +1,23 @@
 "use client";
 
-import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CheckCircle, Crown, Gem, Rocket, Clock, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 function PaymentSuccessForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [planId, setPlanId] = useState('monthly');
+  const [subscriptionId, setSubscriptionId] = useState('');
   const [countdown, setCountdown] = useState(5);
   
-  const planId = searchParams?.get('plan') || 'monthly';
-  const subscriptionId = searchParams?.get('subscription_id') || '';
+  // Get search params in useEffect to avoid SSR issues
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    setPlanId(urlParams.get('plan') || 'monthly');
+    setSubscriptionId(urlParams.get('subscription_id') || '');
+  }, []);
   
   const planDetails = {
     free: { name: 'Free Trial', icon: Crown, color: 'text-purple-400', duration: '7 Days' },
@@ -139,13 +144,5 @@ function PaymentSuccessForm() {
 }
 
 export default function PaymentSuccessPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    }>
-      <PaymentSuccessForm />
-    </Suspense>
-  );
+  return <PaymentSuccessForm />;
 } 
