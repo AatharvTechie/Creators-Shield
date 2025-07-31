@@ -1,12 +1,12 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "", location: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -232,5 +232,17 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#181c2f] to-[#232946]">
+        <div className="text-blue-200">Loading...</div>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 } 
