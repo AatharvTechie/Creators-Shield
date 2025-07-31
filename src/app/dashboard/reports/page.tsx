@@ -35,6 +35,7 @@ import { useSearchParams } from "next/navigation";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 import { useSession } from "next-auth/react";
 import { jwtDecode } from "jwt-decode";
+import { Suspense } from "react";
 
 const formSchema = z.object({
   originalContentId: z.string().min(1, "Please select your original content."),
@@ -46,7 +47,7 @@ const formSchema = z.object({
 });
 
 
-export default function SubmitReportPage() {
+function SubmitReportForm() {
   const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -500,5 +501,17 @@ Sincerely,
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function SubmitReportPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    }>
+      <SubmitReportForm />
+    </Suspense>
   );
 }
