@@ -47,9 +47,10 @@ export async function POST(req: NextRequest) {
         // Download candidate video
         const videoPath = await downloadYoutubeVideo(candidate.url);
         tempFiles.push(videoPath);
-        // Extract audio
-        const audioPath = await extractAudio(videoPath);
-        tempFiles.push(audioPath);
+        // Extract audio - temporarily disabled for Vercel deployment
+        // const audioPath = await extractAudio(videoPath);
+        // Temporarily skip video processing for Vercel deployment
+        continue;
         let matchScore = 0;
         let isMatch = false;
         if (scanType === 'audio') {

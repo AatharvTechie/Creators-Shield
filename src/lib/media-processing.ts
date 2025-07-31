@@ -9,13 +9,13 @@ let ffmpeg: any = null;
 let ffmpegPath: any = null;
 
 if (typeof window === 'undefined') {
-  // Server-side only imports
-  try {
-    ffmpegPath = require('ffmpeg-static');
-    ffmpeg = require('fluent-ffmpeg');
-  } catch (error) {
-    console.warn('FFmpeg not available:', error);
-  }
+  // Server-side only imports - temporarily disabled for Vercel deployment
+  // try {
+  //   ffmpegPath = require('ffmpeg-static');
+  //   ffmpeg = require('fluent-ffmpeg');
+  // } catch (error) {
+  //   console.warn('FFmpeg not available:', error);
+  // }
 }
 
 // Download YouTube video using yt-dlp
@@ -41,46 +41,49 @@ export async function downloadYoutubeVideo(youtubeUrl: string): Promise<string> 
   });
 }
 
-// Extract audio from video using ffmpeg
+// Extract audio from video using ffmpeg - temporarily disabled for Vercel deployment
 export async function extractAudio(videoPath: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    if (!ffmpeg || !ffmpegPath) {
-      return reject(new Error('FFmpeg not available'));
-    }
+    // Temporarily disabled for Vercel deployment
+    reject(new Error('Audio extraction temporarily disabled - FFmpeg not available on Vercel'));
     
-    const outDir = os.tmpdir();
-    // Ensure the output file has a valid .wav extension
-    const outPath = path.join(outDir, `ytaudio_${uuidv4()}.wav`);
-    console.log('[extractAudio] FFmpeg output path:', outPath);
-    if (!outPath.endsWith('.wav')) {
-      return reject(new Error('Output path must have .wav extension: ' + outPath));
-    }
-    ffmpeg(videoPath)
-      .setFfmpegPath(ffmpegPath as string)
-      .noVideo()
-      .audioCodec('pcm_s16le')
-      .audioChannels(1)
-      .audioFrequency(16000)
-      .format('wav')
-      .on('end', () => {
-        if (fs.existsSync(outPath)) {
-          resolve(outPath);
-        } else {
-          reject(new Error('FFmpeg did not create output file: ' + outPath));
-        }
-      })
-      .on('error', (err: any, stdout: any, stderr: any) => {
-        let details = '';
-        if (err) details += err.message + '\n';
-        if (stdout) details += 'stdout: ' + stdout + '\n';
-        if (stderr) details += 'stderr: ' + stderr + '\n';
-        // Add more context for common ffmpeg errors
-        if (details.includes('Invalid argument')) {
-          details += '\n[extractAudio] FFmpeg Invalid argument: Check output path, permissions, and disk space.';
-        }
-        reject(new Error('FFmpeg error: ' + details));
-      })
-      .save(outPath);
+    // if (!ffmpeg || !ffmpegPath) {
+    //   return reject(new Error('FFmpeg not available'));
+    // }
+    
+    // const outDir = os.tmpdir();
+    // // Ensure the output file has a valid .wav extension
+    // const outPath = path.join(outDir, `ytaudio_${uuidv4()}.wav`);
+    // console.log('[extractAudio] FFmpeg output path:', outPath);
+    // if (!outPath.endsWith('.wav')) {
+    //   return reject(new Error('Output path must have .wav extension: ' + outPath));
+    // }
+    // ffmpeg(videoPath)
+    //   .setFfmpegPath(ffmpegPath as string)
+    //   .noVideo()
+    //   .audioCodec('pcm_s16le')
+    //   .audioChannels(1)
+    //   .audioFrequency(16000)
+    //   .format('wav')
+    //   .on('end', () => {
+    //     if (fs.existsSync(outPath)) {
+    //       resolve(outPath);
+    //     } else {
+    //       reject(new Error('FFmpeg did not create output file: ' + outPath));
+    //     }
+    //   })
+    //   .on('error', (err: any, stdout: any, stderr: any) => {
+    //     let details = '';
+    //     if (err) details += err.message + '\n';
+    //     if (stdout) details += 'stdout: ' + stdout + '\n';
+    //     if (stderr) details += 'stderr: ' + stderr + '\n';
+    //     // Add more context for common ffmpeg errors
+    //     if (details.includes('Invalid argument')) {
+    //       details += '\n[extractAudio] FFmpeg Invalid argument: Check output path, permissions, and disk space.';
+    //     }
+    //     reject(new Error('FFmpeg error: ' + details));
+    //   })
+    //   .save(outPath);
   });
 }
 

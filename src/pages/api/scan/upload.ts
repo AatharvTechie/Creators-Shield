@@ -69,9 +69,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({ error: 'Only audio or video files are allowed (mp4, mov, avi, mkv, webm, mp3, wav, aac, flac, ogg)' });
     }
     await dbConnect();
-    // Extract audio if video, else use as is
+    // Extract audio if video, else use as is - temporarily disabled for Vercel deployment
     if (isVideo) {
-      audioPath = await extractAudio(tempFilePath);
+      // audioPath = await extractAudio(tempFilePath);
+      // Temporarily skip video processing for Vercel deployment
+      return res.status(400).json({ error: 'Video processing temporarily disabled - FFmpeg not available on Vercel' });
     } else {
       audioPath = tempFilePath;
     }

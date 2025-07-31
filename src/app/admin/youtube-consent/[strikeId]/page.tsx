@@ -6,9 +6,10 @@ import type { Report, User } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function YouTubeConsentPage({ params }: { params: { strikeId: string } }) {
+export default async function YouTubeConsentPage({ params }: { params: Promise<{ strikeId: string }> }) {
   // Although reports are from a mock store now, it's good practice to serialize
-  const reportData = await getReportById(params.strikeId);
+  const { strikeId } = await params;
+  const reportData = await getReportById(strikeId);
   const report = reportData ? JSON.parse(JSON.stringify(reportData)) as Report : undefined;
 
 

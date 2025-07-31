@@ -1,4 +1,4 @@
-import Razorpay from 'razorpay';
+import razorpay from 'razorpay';
 import dbConnect from '@/lib/mongodb';
 import Creator from '@/models/Creator';
 
@@ -16,12 +16,12 @@ export async function POST(req) {
   if (planId === 'yearly') razorpayPlanId = 'plan_Qvenh9X4D8ggzw';
   
   await dbConnect();
-  const razorpay = new Razorpay({
+  const razorpayInstance = new razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
   });
   try {
-    const subscription = await razorpay.subscriptions.create({
+    const subscription = await razorpayInstance.subscriptions.create({
       plan_id: razorpayPlanId,
       customer_notify: 1,
       total_count: razorpayPlanId === 'plan_QvemyKdfzVGTLc' ? 12 : 1,

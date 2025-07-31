@@ -33,8 +33,10 @@ export async function POST(req: NextRequest) {
     // 1. Download YouTube video
     videoPath = await downloadYoutubeVideo(url);
 
-    // 2. Extract audio
-    audioPath = await extractAudio(videoPath);
+    // 2. Extract audio - temporarily disabled for Vercel deployment
+    // audioPath = await extractAudio(videoPath);
+    // Temporarily skip video processing for Vercel deployment
+    return NextResponse.json({ error: 'Video processing temporarily disabled - FFmpeg not available on Vercel' }, { status: 400 });
 
     // 3. Process audio hash
     const audioResult = await processAudio(audioPath);
