@@ -21,7 +21,11 @@ import {
   Users, 
   Zap,
   Crown,
-  Lock
+  Lock,
+  MessageSquare,
+  Brain,
+  Gavel,
+  Target
 } from "lucide-react";
 
 const NextLink = Link;
@@ -102,6 +106,36 @@ export function CreatorSidebar() {
       href: '/dashboard/reports', 
       label: 'Submit Report', 
       icon: FileText, 
+      requiresConnection: false
+    },
+    { 
+      href: '/dashboard/feedback', 
+      label: 'Feedback & Support', 
+      icon: MessageSquare, 
+      requiresConnection: false
+    },
+    { 
+      href: '/dashboard/advanced-analytics', 
+      label: 'Advanced Analytics', 
+      icon: Target, 
+      requiresConnection: false
+    },
+    { 
+      href: '/dashboard/legal-consultation', 
+      label: 'Legal Consultation', 
+      icon: Gavel, 
+      requiresConnection: false
+    },
+    { 
+      href: '/dashboard/bulk-operations', 
+      label: 'Bulk Operations', 
+      icon: Zap, 
+      requiresConnection: false
+    },
+    { 
+      href: '/dashboard/ai-protection', 
+      label: 'AI Protection', 
+      icon: Brain, 
       requiresConnection: false
     },
     { 

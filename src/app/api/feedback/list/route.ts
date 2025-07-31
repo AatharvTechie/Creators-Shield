@@ -5,8 +5,30 @@ import { NextResponse } from 'next/server';
 
 export async function GET(req: any) {
   await connectToDatabase();
-  // Get all feedback docs
-  const feedbackDocs = await Feedback.find({}).lean();
+  
+  // Get email from query params for filtering
+  const { searchParams } = new URL(req.url);
+  const email = searchParams.get('email');
+  
+  console.log('🔍 Feedback list API - Requested email:', email);
+  
+  // If email is provided, filter by creator email
+  let feedbackDocs;
+  if (email) {
+    // Find creator by email first
+    const creator = await Creator.findOne({ email }).lean();
+    if (creator) {
+      feedbackDocs = await Feedback.find({ creatorId: creator._id }).lean();
+      console.log('🔍 Feedback list API - Found creator, feedback docs:', feedbackDocs.length);
+    } else {
+      console.log('🔍 Feedback list API - Creator not found for email:', email);
+      feedbackDocs = [];
+    }
+  } else {
+    // If no email provided, return all (for admin purposes)
+    feedbackDocs = await Feedback.find({}).lean();
+    console.log('🔍 Feedback list API - No email provided, returning all feedbacks:', feedbackDocs.length);
+  }
   // For each feedback, get creator info and flatten feedbacks
   let allFeedbacks = [];
   for (const doc of feedbackDocs) {

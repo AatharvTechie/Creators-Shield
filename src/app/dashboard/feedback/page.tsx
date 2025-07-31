@@ -37,17 +37,42 @@ const feedbackFormSchema = z.object({
 
 function getUserEmail(session: any): string | null {
   let email = session?.user?.email;
+  
+  // Try localStorage user_email first (most reliable)
+  if (!email && typeof window !== "undefined") {
+    email = localStorage.getItem("user_email");
+    console.log('🔍 getUserEmail - From localStorage user_email:', email);
+  }
+  
+  // Try JWT token decode
   if (!email && typeof window !== "undefined") {
     const token = localStorage.getItem("creator_jwt");
     if (token) {
       try {
         const decoded = JSON.parse(atob(token.split('.')[1]));
         email = decoded.email;
+        console.log('🔍 getUserEmail - From JWT token:', email);
       } catch (e) {
         console.error('JWT decode error:', e);
       }
     }
   }
+  
+  // Try dashboard data
+  if (!email && typeof window !== "undefined") {
+    try {
+      const dashboardData = localStorage.getItem("dashboard_data");
+      if (dashboardData) {
+        const data = JSON.parse(dashboardData);
+        email = data?.user?.email;
+        console.log('🔍 getUserEmail - From dashboard data:', email);
+      }
+    } catch (e) {
+      console.error('Dashboard data parse error:', e);
+    }
+  }
+  
+  console.log('🔍 getUserEmail - Final email:', email);
   return email;
 }
 
@@ -98,8 +123,18 @@ export default function FeedbackPage() {
 
   // Set userEmail only on client
   React.useEffect(() => {
-    setUserEmail(getUserEmail(session));
-  }, [session]);
+    if (typeof window !== 'undefined') {
+      const email = getUserEmail(session);
+      if (email) {
+        setUserEmail(email);
+      } else {
+        // Try to get email from dashboard context
+        if (dashboardData?.user?.email) {
+          setUserEmail(dashboardData.user.email);
+        }
+      }
+    }
+  }, [session, dashboardData]);
 
   React.useEffect(() => {
     if (disconnectRequest) {
@@ -179,10 +214,16 @@ export default function FeedbackPage() {
   async function onSubmit(values: z.infer<typeof feedbackFormSchema>) {
     setIsLoading(true);
     if (!userEmail) {
-      toast({ variant: 'destructive', title: 'Error', description: 'User not logged in.' });
+      toast({ 
+        variant: 'destructive', 
+        title: 'Error', 
+        description: 'User not logged in. Please refresh the page and try again.' 
+      });
       setIsLoading(false);
       return;
     }
+
+    console.log('Submitting feedback with email:', userEmail);
 
     const feedbackData = {
       creatorEmail: userEmail,

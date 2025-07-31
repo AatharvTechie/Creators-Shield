@@ -717,192 +717,103 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-          {/* Platforms Section */}
-          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-8 animate-slide-in-up relative overflow-hidden">
-            <div className="absolute left-0 top-6 h-8 w-1 bg-red-500 rounded-r-full" />
-            <h2 className="text-xl font-bold mb-6 pl-4 flex items-center gap-2">Platforms</h2>
-            <div className="flex flex-col gap-6">
-              <div>
-                <label className="block mb-1 font-medium">YouTube</label>
-                {youtubeChannelId && youtubeChannel ? (
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
-                      <img src={youtubeChannel.thumbnail} alt="Channel" className="w-10 h-10 rounded-full border" />
-                      <div>
-                        <div className="font-medium">{youtubeChannel.title}</div>
-                        <a href={youtubeChannel.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 text-xs underline">{youtubeChannel.url}</a>
-                      </div>
+
+          {/* Connected Platforms Section */}
+          <div className="col-span-2 bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-8 animate-slide-in-up relative overflow-hidden">
+            <div className="absolute left-0 top-6 h-8 w-1 bg-blue-500 rounded-r-full" />
+            <h2 className="text-xl font-bold mb-6 pl-4 flex items-center gap-2">Connected Platforms</h2>
+            <div className="flex flex-col gap-4">
+              {youtubeChannelId && youtubeChannel ? (
+                <div className="flex items-center justify-between p-4 bg-background/50 rounded-lg border">
+                  <div className="flex items-center gap-3">
+                    <img src={youtubeChannel.thumbnail} alt="Channel" className="w-10 h-10 rounded-full border" />
+                    <div>
+                      <div className="font-medium">{youtubeChannel.title}</div>
+                      <div className="text-sm text-muted-foreground">YouTube Channel</div>
                     </div>
-                    <Button
-                      variant="outline"
-                      disabled={platformLoading}
-                      onClick={() => setShowDisconnectInfo(true)}
-                    >
-                      Disconnect
-                    </Button>
-                    {showDisconnectInfo && (
-                      <div className="mt-2 p-3 bg-blue-50 border border-blue-300 rounded max-w-xl w-full flex items-start gap-3 animate-fade-in">
-                        <Info className="w-6 h-6 text-blue-500 mt-1 flex-shrink-0" />
-                        <div className="flex-1">
-                          {disconnectApproved ? (
-                            <>
-                              <div className="font-semibold text-green-800 mb-1">Disconnect Approved</div>
-                              <div className="text-green-700 text-sm mb-2" style={{whiteSpace: 'normal'}}>
-                                Your disconnect request has been <b>approved by the admin</b>. You may now disconnect your channel.
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  disabled={disconnecting}
-                                  onClick={async () => {
-                                    setDisconnecting(true);
-                                    try {
-                                      const res = await fetch('/api/settings/reset-connections', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ email }),
-                                      });
-                                      const data = await res.json();
-                                      if (data.success) {
-                                        setYoutubeChannelId('');
-                                        setYoutubeChannel(null);
-                                        setDisconnectApproved(false);
-                                        toast({ title: 'Disconnected', description: 'Your YouTube channel has been disconnected.' });
-                                        if (dashboardRefresh) await dashboardRefresh();
-                                      } else {
-                                        toast({ title: 'Error', description: data.error || 'Failed to disconnect', variant: 'destructive' });
-                                      }
-                                    } catch (err) {
-                                      toast({ title: 'Error', description: 'Failed to disconnect', variant: 'destructive' });
-                                    } finally {
-                                      setDisconnecting(false);
-                                    }
-                                  }}
-                                >
-                                  {disconnecting ? 'Disconnecting...' : 'Disconnect'}
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => setShowDisconnectInfo(false)}>OK</Button>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                          <div className="font-semibold text-blue-800 mb-1">Channel disconnection is restricted</div>
-                          <div className="text-blue-700 text-sm mb-2" style={{whiteSpace: 'normal'}}>
-                            For your security, direct channel disconnection is disabled to prevent unauthorized or accidental removal of your YouTube channel. <br />
-                            If you wish to disconnect, please submit a request to the admin via the Feedback section.
-                          </div>
-                            </>
-                          )}
-                          <div className="flex justify-end">
-                            <Button size="sm" variant="outline" onClick={() => setShowDisconnectInfo(false)}>OK</Button>
-                          </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={platformLoading}
+                    onClick={() => setShowDisconnectInfo(true)}
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <div className="text-lg font-medium mb-2">No platforms connected</div>
+                  <div className="text-sm mb-4">Connect your platforms to start monitoring your content</div>
+                  <Button onClick={() => router.push('/dashboard/integrations')}>
+                    Go to Integrations
+                  </Button>
+                </div>
+              )}
+              
+              {showDisconnectInfo && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-300 rounded max-w-xl w-full flex items-start gap-3 animate-fade-in">
+                  <Info className="w-6 h-6 text-blue-500 mt-1 flex-shrink-0" />
+                  <div className="flex-1">
+                    {disconnectApproved ? (
+                      <>
+                        <div className="font-semibold text-green-800 mb-1">Disconnect Approved</div>
+                        <div className="text-green-700 text-sm mb-2" style={{whiteSpace: 'normal'}}>
+                          Your disconnect request has been <b>approved by the admin</b>. You may now disconnect your channel.
                         </div>
-                      </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={disconnecting}
+                            onClick={async () => {
+                              setDisconnecting(true);
+                              try {
+                                const res = await fetch('/api/settings/reset-connections', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ email }),
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  setYoutubeChannelId('');
+                                  setYoutubeChannel(null);
+                                  setDisconnectApproved(false);
+                                  toast({ title: 'Disconnected', description: 'Your YouTube channel has been disconnected.' });
+                                  if (dashboardRefresh) await dashboardRefresh();
+                                } else {
+                                  toast({ title: 'Error', description: data.error || 'Failed to disconnect', variant: 'destructive' });
+                                }
+                              } catch (err) {
+                                toast({ title: 'Error', description: 'Failed to disconnect', variant: 'destructive' });
+                              } finally {
+                                setDisconnecting(false);
+                              }
+                            }}
+                          >
+                            {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setShowDisconnectInfo(false)}>OK</Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-semibold text-blue-800 mb-1">Channel disconnection is restricted</div>
+                        <div className="text-blue-700 text-sm mb-2" style={{whiteSpace: 'normal'}}>
+                          For your security, direct channel disconnection is disabled to prevent unauthorized or accidental removal of your YouTube channel. <br />
+                          If you wish to disconnect, please submit a request to the admin via the Feedback section.
+                        </div>
+                        <div className="flex justify-end">
+                          <Button size="sm" variant="outline" onClick={() => setShowDisconnectInfo(false)}>OK</Button>
+                        </div>
+                      </>
                     )}
                   </div>
-                ) : (
-                  <form
-                    className="flex flex-col gap-2 md:flex-row md:items-center"
-                    onSubmit={async e => {
-                      e.preventDefault();
-                      setPlatformLoading(true);
-                      setYoutubeError('');
-                      try {
-                        // 1. Verify channel
-                        const verifyRes = await fetch('/api/youtube/verify-channel', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ channelId: youtubeChannelId }),
-                        });
-                        const verifyData = await verifyRes.json();
-                        console.log('YouTube verify response:', verifyData);
-                        if (!verifyRes.ok) {
-                          setYoutubeError(verifyData.error || 'Invalid channel ID');
-                          setPlatformLoading(false);
-                          return;
-                        }
-                        // 2. Save to user profile (including disconnectApproved: false)
-                        const saveRes = await fetch('/api/save-user', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            email,
-                            disconnectApproved: false,
-                            youtubeChannelId: verifyData.id,
-                            youtubeChannel: {
-                              id: verifyData.id,
-                              title: verifyData.title,
-                              thumbnail: verifyData.thumbnail,
-                              url: verifyData.url,
-                              subscriberCount: verifyData.subscriberCount,
-                              viewCount: verifyData.viewCount,
-                              mostViewedVideo: verifyData.mostViewedVideo,
-                            },
-                          }),
-                        });
-                        const saveData = await saveRes.json();
-                        console.log('Save user response:', saveData);
-                        if (saveData.success) {
-                          
-                          // Set connecting state and update local state
-                          setConnectingNewChannel(true);
-                          setYoutubeChannelId(verifyData.id);
-                          setYoutubeChannel({
-                            id: verifyData.id,
-                            title: verifyData.title,
-                            thumbnail: verifyData.thumbnail,
-                            url: verifyData.url,
-                            subscriberCount: verifyData.subscriberCount,
-                            viewCount: verifyData.viewCount,
-                            mostViewedVideo: verifyData.mostViewedVideo,
-                          });
-                          
-                          // Wait a moment for database to commit, then refresh dashboard
-                          setTimeout(async () => {
-                            try {
-                              // Force a fresh database fetch to ensure we have the latest data
-                              if (dashboardRefresh) {
-                                await dashboardRefresh();
-                              }
-                              // Wait a bit more to ensure analytics data is loaded, then reload the page
-                              setTimeout(() => {
-                            window.location.reload();
-                              }, 2000);
-                            } catch (error) {
-                              console.error('Error refreshing dashboard after channel connect:', error);
-                              setConnectingNewChannel(false);
-                              toast({ title: 'Connected', description: 'YouTube channel connected. Please refresh the page to see analytics.' });
-                          }
-                          }, 1500);
-                        } else {
-                          setYoutubeError(saveData.error || 'Failed to connect');
-                        }
-                      } catch (err) {
-                        console.error('YouTube connect error:', err);
-                        setYoutubeError('Failed to connect');
-                      } finally {
-                        setPlatformLoading(false);
-                      }
-                    }}
-                  >
-                    <Input
-                      value={youtubeChannelId}
-                      onChange={e => setYoutubeChannelId(e.target.value)}
-                      placeholder="Enter YouTube Channel ID"
-                      className="w-64"
-                      required
-                      disabled={platformLoading}
-                    />
-                    <Button type="submit" disabled={platformLoading}>
-                      {platformLoading ? 'Connecting...' : 'Connect'}
-                    </Button>
-                    {youtubeError && <div className="text-destructive text-sm mt-1">{youtubeError}</div>}
-                  </form>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
+
           {/* Divider before Danger Zone */}
           <div className="col-span-2 my-2">
             <div className="border-t border-destructive/30 w-full" />

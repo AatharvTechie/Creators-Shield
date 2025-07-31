@@ -1,166 +1,117 @@
-// Plan-based feature access system
 export interface PlanFeatures {
-  plan: 'free' | 'monthly' | 'yearly';
-  features: {
-    // YouTube Channel Limits
-    maxYouTubeChannels: number;
-    maxVideosToMonitor: number;
-    
-    // Violation Detection
-    maxViolationDetections: number;
-    unlimitedViolationDetection: boolean;
-    
-    // DMCA Requests
-    maxDmcaRequests: number;
-    unlimitedDmcaRequests: boolean;
-    
-    // Support
-    supportResponseTime: '48h' | '7h' | '1h';
-    prioritySupport: boolean;
-    dedicatedManager: boolean;
-    
-    // Analytics & Reports
-    advancedAnalytics: boolean;
-    pdfReports: boolean;
-    scheduledReports: boolean;
-    
-    // Multi-platform Monitoring
-    multiPlatformMonitoring: boolean;
-    maxPlatforms: number;
-    
-    // Real-time Features
-    realTimeAlerts: boolean;
-    emailTemplates: boolean;
-    violationHistory: boolean;
-    
-    // Advanced Features
-    customBranding: boolean;
-    apiAccess: boolean;
-    legalConsultation: boolean;
-    bulkOperations: boolean;
-    predictiveAnalytics: boolean;
-    priorityQueueProcessing: boolean;
-    customIntegrations: boolean;
-    teamManagement: boolean;
-    
-    // AI Features
-    advancedAiProtection: boolean;
-  };
+  duration: string;
+  supportResponse: string;
+  youtubeChannels: boolean;
+  videoMonitoring: number | 'unlimited';
+  violationDetection: number | 'unlimited';
+  dmcaRequests: number | 'unlimited';
+  advancedAnalytics: boolean;
+  multiPlatformMonitoring: boolean;
+  realTimeAlerts: boolean;
+  violationHistory: boolean;
+  apiAccess: boolean;
+  legalConsultation: boolean;
+  bulkOperations: boolean;
+  predictiveAnalytics: boolean;
+  priorityQueueProcessing: boolean;
+  customIntegrations: boolean;
+  teamManagement: boolean;
+  advancedAiProtection: boolean;
+  dedicatedAccountManager: boolean;
 }
 
 export const PLAN_FEATURES: Record<string, PlanFeatures> = {
-  free: {
-    plan: 'free',
-    features: {
-      maxYouTubeChannels: -1, // Unlimited
-      maxVideosToMonitor: -1, // Unlimited
-      maxViolationDetections: -1, // Unlimited
-      unlimitedViolationDetection: true,
-      maxDmcaRequests: -1, // Unlimited
-      unlimitedDmcaRequests: true,
-      supportResponseTime: '48h',
-      prioritySupport: false,
-      dedicatedManager: false,
-      advancedAnalytics: true,
-      pdfReports: true,
-      scheduledReports: true,
-      multiPlatformMonitoring: true,
-      maxPlatforms: -1, // All platforms
-      realTimeAlerts: true,
-      emailTemplates: true,
-      violationHistory: true,
-      customBranding: true,
-      apiAccess: true,
-      legalConsultation: true,
-      bulkOperations: true,
-      predictiveAnalytics: true,
-      priorityQueueProcessing: true,
-      customIntegrations: true,
-      teamManagement: true,
-      advancedAiProtection: true,
-    }
+  'free-trial': {
+    duration: '7 Days',
+    supportResponse: '2-3 Days',
+    youtubeChannels: true,
+    videoMonitoring: 5,
+    violationDetection: 5,
+    dmcaRequests: 1,
+    advancedAnalytics: true,
+    multiPlatformMonitoring: true,
+    realTimeAlerts: true,
+    violationHistory: true,
+    apiAccess: true,
+    legalConsultation: false,
+    bulkOperations: false,
+    predictiveAnalytics: false,
+    priorityQueueProcessing: true,
+    customIntegrations: false,
+    teamManagement: false,
+    advancedAiProtection: false,
+    dedicatedAccountManager: false,
   },
-  monthly: {
-    plan: 'monthly',
-    features: {
-      maxYouTubeChannels: -1, // Unlimited
-      maxVideosToMonitor: -1, // Unlimited
-      maxViolationDetections: -1, // Unlimited
-      unlimitedViolationDetection: true,
-      maxDmcaRequests: -1, // Unlimited
-      unlimitedDmcaRequests: true,
-      supportResponseTime: '7h',
-      prioritySupport: true,
-      dedicatedManager: false,
-      advancedAnalytics: true,
-      pdfReports: true,
-      scheduledReports: true,
-      multiPlatformMonitoring: true,
-      maxPlatforms: -1, // All platforms
-      realTimeAlerts: true,
-      emailTemplates: true,
-      violationHistory: true,
-      customBranding: true,
-      apiAccess: true,
-      legalConsultation: true,
-      bulkOperations: true,
-      predictiveAnalytics: true,
-      priorityQueueProcessing: true,
-      customIntegrations: true,
-      teamManagement: true,
-      advancedAiProtection: true,
-    }
+  'monthly': {
+    duration: '1 Month',
+    supportResponse: '12h',
+    youtubeChannels: true,
+    videoMonitoring: 20,
+    violationDetection: 20,
+    dmcaRequests: 20,
+    advancedAnalytics: true,
+    multiPlatformMonitoring: true,
+    realTimeAlerts: true,
+    violationHistory: true,
+    apiAccess: true,
+    legalConsultation: true,
+    bulkOperations: false,
+    predictiveAnalytics: true,
+    priorityQueueProcessing: true,
+    customIntegrations: false,
+    teamManagement: false,
+    advancedAiProtection: false,
+    dedicatedAccountManager: false,
   },
-  yearly: {
-    plan: 'yearly',
-    features: {
-      maxYouTubeChannels: -1, // Unlimited
-      maxVideosToMonitor: -1, // Unlimited
-      maxViolationDetections: -1, // Unlimited
-      unlimitedViolationDetection: true,
-      maxDmcaRequests: -1, // Unlimited
-      unlimitedDmcaRequests: true,
-      supportResponseTime: '7h',
-      prioritySupport: true,
-      dedicatedManager: true,
-      advancedAnalytics: true,
-      pdfReports: true,
-      scheduledReports: true,
-      multiPlatformMonitoring: true,
-      maxPlatforms: -1, // All platforms
-      realTimeAlerts: true,
-      emailTemplates: true,
-      violationHistory: true,
-      customBranding: true,
-      apiAccess: true,
-      legalConsultation: true,
-      bulkOperations: true,
-      predictiveAnalytics: true,
-      priorityQueueProcessing: true,
-      customIntegrations: true,
-      teamManagement: true,
-      advancedAiProtection: true,
-    }
-  }
+  'yearly': {
+    duration: '1 Year',
+    supportResponse: '7h',
+    youtubeChannels: true,
+    videoMonitoring: 'unlimited',
+    violationDetection: 'unlimited',
+    dmcaRequests: 'unlimited',
+    advancedAnalytics: true,
+    multiPlatformMonitoring: true,
+    realTimeAlerts: true,
+    violationHistory: true,
+    apiAccess: true,
+    legalConsultation: true,
+    bulkOperations: true,
+    predictiveAnalytics: true,
+    priorityQueueProcessing: true,
+    customIntegrations: true,
+    teamManagement: true,
+    advancedAiProtection: true,
+    dedicatedAccountManager: true,
+  },
 };
 
-// Feature access check functions
-export function hasFeatureAccess(userPlan: string, feature: keyof PlanFeatures['features']): boolean {
-  const plan = PLAN_FEATURES[userPlan] || PLAN_FEATURES.free;
-  const value = plan.features[feature];
-  return value === true || (typeof value === 'number' && value > 0);
+export function getPlanFeatures(plan: string): PlanFeatures {
+  return PLAN_FEATURES[plan] || PLAN_FEATURES['free-trial'];
 }
 
-export function getFeatureLimit(userPlan: string, feature: keyof PlanFeatures['features']): number {
-  const plan = PLAN_FEATURES[userPlan] || PLAN_FEATURES.free;
-  const value = plan.features[feature];
-  return typeof value === 'number' ? value : 0;
+export function checkFeatureAccess(plan: string, feature: keyof PlanFeatures): boolean {
+  const features = getPlanFeatures(plan);
+  return features[feature] === true;
 }
 
-export function isUnlimited(userPlan: string, feature: keyof PlanFeatures['features']): boolean {
-  const plan = PLAN_FEATURES[userPlan] || PLAN_FEATURES.free;
-  const value = plan.features[feature];
-  return value === -1 || value === true;
+export function getFeatureLimit(plan: string, feature: keyof PlanFeatures): number | 'unlimited' {
+  const features = getPlanFeatures(plan);
+  const value = features[feature];
+  return typeof value === 'number' ? value : 'unlimited';
+}
+
+export function formatFeatureValue(value: boolean | number | string): string {
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
+  }
+  if (value === 'unlimited') {
+    return 'Unlimited';
+  }
+  if (typeof value === 'number') {
+    return value.toString();
+  }
+  return value;
 }
 
 // Dashboard feature access - All plans have access to all features
@@ -215,7 +166,7 @@ export function checkUsageLimit(userPlan: string, currentUsage: UsageStats): {
 export function getUpgradeSuggestion(userPlan: string, usage: UsageStats): string | null {
   // All plans have unlimited access to all features
   // Users can upgrade for longer duration or better support response time
-  if (userPlan === 'free') {
+  if (userPlan === 'free-trial') {
     return 'Upgrade to monthly or yearly for longer access and better support';
   }
   if (userPlan === 'monthly') {

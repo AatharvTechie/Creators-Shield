@@ -12,6 +12,7 @@ interface DashboardData {
   isLoading: boolean;
   error: string | null;
   usageStats: UsageStats;
+  platformStatus: any;
   planFeatures: {
     canAccessFeature: (feature: string) => boolean;
     getFeatureLimit: (feature: string) => number;
@@ -26,25 +27,20 @@ interface DashboardData {
 const DashboardContext = createContext<DashboardData | undefined>(undefined);
 
 export function DashboardDataProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [analytics, setAnalytics] = useState<UserAnalytics | null>(null);
-  const [activity, setActivity] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [usageStats, setUsageStats] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [activity, setActivity] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [platformStatus, setPlatformStatus] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [usageStats, setUsageStats] = useState<UsageStats>({
-    youtubeChannels: 0,
-    videosMonitored: 0,
-    violationDetections: 0,
-    dmcaRequests: 0,
-    platformsConnected: 0
-  });
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         // Check if we're in the browser
         if (typeof window === 'undefined') {
-          setIsLoading(false);
+          setLoading(false);
           return;
         }
 
@@ -56,13 +52,13 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         
         if (!token) {
           setError('No authentication token found');
-          setIsLoading(false);
+          setLoading(false);
           return;
         }
         
         if (!userEmail) {
           setError('User email not found');
-          setIsLoading(false);
+          setLoading(false);
           return;
         }
         
@@ -91,6 +87,22 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
               dmcaRequests: 0, // You can update this based on actual data
               platformsConnected: userData?.platformsConnected?.length || 0
             });
+
+            // Fetch platform status
+            try {
+              const platformResponse = await fetch('/api/platform/status', {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              if (platformResponse.ok) {
+                const platformData = await platformResponse.json();
+                setPlatformStatus(platformData.data);
+              }
+            } catch (platformError) {
+              console.log('⚠️ Platform status fetch failed:', platformError);
+            }
           } else {
             console.log('⚠️ Dashboard data fetch failed, trying fallback method');
             throw new Error('Dashboard data fetch failed');
@@ -164,7 +176,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         console.error('❌ Dashboard context error:', err);
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
@@ -202,7 +214,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
 
   const refresh = () => {
     // Trigger a refresh by refetching user data
-    setIsLoading(true);
+    setLoading(true);
     setError(null);
     // This will trigger the useEffect to refetch data
   };
@@ -211,12 +223,13 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     user,
     analytics,
     activity,
-    isLoading,
+    isLoading: loading,
     error,
     usageStats,
+    platformStatus,
     planFeatures,
     refresh,
-    loading: isLoading
+    loading: loading
   };
 
   return (

@@ -36,11 +36,12 @@ interface YouTubeData {
 }
 
 export default function OverviewPage() {
-  const { user, usageStats, planFeatures } = useDashboardData();
+  const { user, usageStats, planFeatures, platformStatus } = useDashboardData();
   const [youtubeData, setYoutubeData] = useState<YouTubeData | null>(null);
   const [loading, setLoading] = useState(false);
   
   const hasYouTubeChannel = user?.youtubeChannel && user.youtubeChannel.id;
+  const activePlatform = platformStatus?.activePlatform;
 
   // Fetch YouTube data when channel is available
   useEffect(() => {
@@ -77,17 +78,17 @@ export default function OverviewPage() {
 
     fetchYouTubeData();
   }, [hasYouTubeChannel, user?.email, user?.youtubeChannel?.id, user?.youtubeChannelId]);
-
+  
   if (!user) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-500">Loading dashboard...</p>
+            </div>
         </div>
-      </div>
     );
-  }
+}
 
   const userPlan = user.plan || 'free';
   const limits = planFeatures.checkUsageLimits();
@@ -106,7 +107,7 @@ export default function OverviewPage() {
   const dmcaUsage = planFeatures.isUnlimited('maxDmcaRequests') ? 0 : 
     (usageStats.dmcaRequests / planFeatures.getFeatureLimit('maxDmcaRequests')) * 100;
 
-  return (
+    return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -147,70 +148,87 @@ export default function OverviewPage() {
               </Button>
             </Link>
           </CardContent>
-        </Card>
+      </Card>
       )}
 
-      {/* YouTube Channel Stats - Show real data when connected (3 cards) */}
-      {hasYouTubeChannel ? (
+      {/* Platform Stats - Show real data when connected (3 cards) */}
+      {activePlatform ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Subscribers */}
+          {/* Primary Metric */}
           <Card className="bg-white/5 border-gray-600/30">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-300">Total Subscribers</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-300">
+                {activePlatform === 'youtube' ? 'Total Subscribers' : activePlatform === 'instagram' ? 'Total Followers' : 'Total Subscribers'}
+              </CardTitle>
               <Users className="h-4 w-4 text-green-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">
                 {loading ? (
                   <div className="animate-pulse bg-gray-600 h-8 w-20 rounded"></div>
-                ) : youtubeData ? 
+                ) : activePlatform === 'youtube' && youtubeData ? 
                   formatNumber(youtubeData.subscribers) : 
+                  activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.followers ?
+                  formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.followers) :
                   'N/A'
                 }
               </div>
-              <p className="text-xs text-gray-400">Channel subscribers</p>
+              <p className="text-xs text-gray-400">
+                {activePlatform === 'youtube' ? 'Channel subscribers' : activePlatform === 'instagram' ? 'Instagram followers' : 'Platform metric'}
+              </p>
             </CardContent>
           </Card>
 
-          {/* Total Views */}
+          {/* Secondary Metric */}
           <Card className="bg-white/5 border-gray-600/30">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-300">Total Views</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-300">
+                {activePlatform === 'youtube' ? 'Total Views' : activePlatform === 'instagram' ? 'Total Posts' : 'Total Views'}
+              </CardTitle>
               <Eye className="h-4 w-4 text-blue-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-white">
                 {loading ? (
                   <div className="animate-pulse bg-gray-600 h-8 w-20 rounded"></div>
-                ) : youtubeData ? 
+                ) : activePlatform === 'youtube' && youtubeData ? 
                   formatNumber(youtubeData.views) : 
+                  activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.posts ?
+                  formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.posts) :
                   'N/A'
                 }
               </div>
-              <p className="text-xs text-gray-400">Lifetime views</p>
+              <p className="text-xs text-gray-400">
+                {activePlatform === 'youtube' ? 'Lifetime views' : activePlatform === 'instagram' ? 'Total posts' : 'Platform metric'}
+              </p>
             </CardContent>
           </Card>
 
-          {/* Most Viewed Video */}
+          {/* Third Metric */}
           <Card className="bg-white/5 border-gray-600/30">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-300">Most Viewed Video</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-300">
+                {activePlatform === 'youtube' ? 'Most Viewed Video' : activePlatform === 'instagram' ? 'Most Liked Post' : 'Most Viewed Video'}
+              </CardTitle>
               <Video className="h-4 w-4 text-yellow-400" />
             </CardHeader>
             <CardContent>
               <div className="text-lg font-bold text-white truncate">
                 {loading ? (
                   <div className="animate-pulse bg-gray-600 h-6 w-32 rounded"></div>
-                ) : youtubeData ? 
+                ) : activePlatform === 'youtube' && youtubeData ? 
                   youtubeData.mostViewedVideo.title : 
+                  activePlatform === 'instagram' ? 'Instagram Post' :
                   'N/A'
                 }
               </div>
               <p className="text-xs text-gray-400">
                 {loading ? (
                   <div className="animate-pulse bg-gray-600 h-3 w-16 rounded mt-1"></div>
-                ) : youtubeData ? 
+                ) : activePlatform === 'youtube' && youtubeData ? 
                   `${formatNumber(youtubeData.mostViewedVideo.views)} views` : 
+                  activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.totalLikes ?
+                  `${formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.totalLikes)} likes` :
                   'No data'
                 }
               </p>
@@ -218,21 +236,21 @@ export default function OverviewPage() {
           </Card>
         </div>
       ) : (
-        /* Show connection prompt when no YouTube channel */
+        /* Show connection prompt when no platform connected */
         <Card className="border-blue-500/30 bg-blue-500/10">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-blue-300">
               <Video className="w-5 h-5" />
-              Connect Your YouTube Channel
+              Connect Your Platform
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-gray-300 mb-4">
-              Connect your YouTube channel to see real-time analytics and channel statistics.
+              Connect your social media platform to see real-time analytics and platform statistics.
             </p>
-            <Link href="/dashboard/settings">
+            <Link href="/dashboard/integrations">
               <Button className="bg-blue-600 hover:bg-blue-700">
-                Connect YouTube Channel
+                Connect Platform
               </Button>
             </Link>
           </CardContent>
@@ -289,6 +307,6 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+                </div>
   );
 }

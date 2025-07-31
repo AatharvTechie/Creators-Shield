@@ -58,9 +58,9 @@ const predefinedColors = [
 ];
 
 function ColorPicker({ color, onChange, label }: ColorPickerProps) {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="flex items-center gap-2">
           <div 
             className="w-4 h-4 rounded border-2 border-gray-600" 
@@ -68,8 +68,8 @@ function ColorPicker({ color, onChange, label }: ColorPickerProps) {
           />
           <Palette className="w-4 h-4" />
           {label}
-        </Button>
-      </PopoverTrigger>
+                </Button>
+            </PopoverTrigger>
       <PopoverContent className="w-64">
         <div className="space-y-4">
           <h4 className="font-medium">Choose Color</h4>
@@ -78,7 +78,7 @@ function ColorPicker({ color, onChange, label }: ColorPickerProps) {
               <button
                 key={colorOption.value}
                 className="w-8 h-8 rounded border-2 hover:scale-110 transition-transform"
-                style={{ 
+                                    style={{
                   backgroundColor: colorOption.value,
                   borderColor: color === colorOption.value ? '#fff' : 'transparent'
                 }}
@@ -96,10 +96,10 @@ function ColorPicker({ color, onChange, label }: ColorPickerProps) {
             />
             <span className="text-sm text-gray-400">Custom color</span>
           </div>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
 }
 
 export default function AnalyticsClientPage() {
@@ -164,13 +164,13 @@ export default function AnalyticsClientPage() {
 
   const NoAnalyticsData = ({ hasChannel }: NoAnalyticsDataProps) => (
     <Card className="border-dashed border-gray-600/30 bg-gray-500/5">
-      <CardHeader>
+          <CardHeader>
         <CardTitle className="flex items-center gap-2 text-gray-300">
           <BarChart3 className="w-5 h-5" />
           {hasChannel ? 'No Analytics Data Available' : 'Connect Your Channel'}
         </CardTitle>
-      </CardHeader>
-      <CardContent>
+          </CardHeader>
+          <CardContent>
         <p className="text-gray-400 mb-4">
           {hasChannel 
             ? 'No analytics data available for the selected date range. Try adjusting your date range or check back later.'
@@ -181,11 +181,11 @@ export default function AnalyticsClientPage() {
           <Link href="/dashboard/settings">
             <Button className="bg-blue-600 hover:bg-blue-700">
               Connect YouTube Channel
-            </Button>
+              </Button>
           </Link>
         )}
-      </CardContent>
-    </Card>
+          </CardContent>
+      </Card>
   );
 
   // Transform data for charts
@@ -223,8 +223,8 @@ export default function AnalyticsClientPage() {
               ? 'Real-time analytics and performance metrics for your YouTube channel'
               : 'Connect your YouTube channel to see detailed analytics'
             }
-          </p>
-        </div>
+                    </p>
+                </div>
         <div className="flex items-center gap-2">
           <Badge variant={userPlan === 'yearly' ? 'default' : userPlan === 'monthly' ? 'secondary' : 'outline'}>
             {userPlan === 'free' && <Crown className="w-3 h-3 mr-1" />}
@@ -250,13 +250,13 @@ export default function AnalyticsClientPage() {
           <Select value={aggregation} onValueChange={setAggregation}>
             <SelectTrigger className="w-32">
               <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
+                        </SelectTrigger>
+                        <SelectContent>
               <SelectItem value="day">Daily</SelectItem>
-              <SelectItem value="week">Weekly</SelectItem>
-              <SelectItem value="month">Monthly</SelectItem>
-            </SelectContent>
-          </Select>
+                            <SelectItem value="week">Weekly</SelectItem>
+                            <SelectItem value="month">Monthly</SelectItem>
+                        </SelectContent>
+                    </Select>
         </div>
         <Button 
           variant="outline" 
@@ -273,7 +273,7 @@ export default function AnalyticsClientPage() {
           <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
           Reset
         </Button>
-      </div>
+                </div>
 
       {/* Main Stats Grid (4 cards) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -292,49 +292,49 @@ export default function AnalyticsClientPage() {
             </p>
           </CardContent>
         </Card>
-
+            
         {/* Subscribers */}
         <Card className="bg-white/5 border-gray-600/30 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-300">Subscribers</CardTitle>
             <Users className="h-4 w-4 text-blue-400" />
-          </CardHeader>
-          <CardContent>
+                </CardHeader>
+                <CardContent>
             <div className="text-2xl font-bold text-white">
               {analytics?.subscribers ? formatNumber(analytics.subscribers) : 'N/A'}
             </div>
             <p className="text-xs text-gray-400">Total subscribers</p>
-          </CardContent>
-        </Card>
+                </CardContent>
+                </Card>
 
         {/* Views */}
         <Card className="bg-white/5 border-gray-600/30 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-300">Total Views</CardTitle>
             <Eye className="h-4 w-4 text-green-400" />
-          </CardHeader>
-          <CardContent>
+                </CardHeader>
+                <CardContent>
             <div className="text-2xl font-bold text-white">
               {analytics?.views ? formatNumber(analytics.views) : 'N/A'}
             </div>
             <p className="text-xs text-gray-400">Lifetime views</p>
-          </CardContent>
-        </Card>
+                </CardContent>
+                </Card>
 
         {/* Videos */}
         <Card className="bg-white/5 border-gray-600/30 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-gray-300">Videos</CardTitle>
             <Video className="h-4 w-4 text-purple-400" />
-          </CardHeader>
-          <CardContent>
+                </CardHeader>
+                <CardContent>
             <div className="text-2xl font-bold text-white">
               {analytics?.videoCount || analyticsData?.analytics?.videoCount || 'N/A'}
             </div>
             <p className="text-xs text-gray-400">Total videos</p>
-          </CardContent>
-        </Card>
-      </div>
+                </CardContent>
+                </Card>
+            </div>
 
       {/* Channel Insights - Additional real data section when channel is connected */}
       {hasRealData && analytics && (
@@ -380,7 +380,7 @@ export default function AnalyticsClientPage() {
                 </div>
                 <p className="text-sm text-gray-400">Growth Rate</p>
               </div>
-            </div>
+                        </div>
           </CardContent>
         </Card>
       )}
@@ -396,29 +396,29 @@ export default function AnalyticsClientPage() {
                   <TrendingUp className="w-6 h-6" />
                   Overall Channel Performance
                 </CardTitle>
-                <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                   <Select value={viewChartType} onValueChange={(value: ChartType) => setViewChartType(value)}>
                     <SelectTrigger className="w-24">
                       <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
+                                </SelectTrigger>
+                                <SelectContent>
                       <SelectItem value="line">Line</SelectItem>
                       <SelectItem value="bar">Bar</SelectItem>
                       <SelectItem value="area">Area</SelectItem>
-                    </SelectContent>
-                  </Select>
+                                </SelectContent>
+                            </Select>
                   <ColorPicker 
                     color={viewColor} 
                     onChange={setViewColor} 
                     label="Color"
                   />
                 </div>
-              </div>
+                        </div>
               <CardDescription className="text-gray-400">
                 {isLoading ? 'Loading data...' : `Comprehensive performance data from ${format(safeDateRange.from, 'MMM dd')} to ${format(safeDateRange.to, 'MMM dd')}`}
               </CardDescription>
-            </CardHeader>
-            <CardContent>
+                    </CardHeader>
+                    <CardContent>
               {isLoading ? (
                 <div className="flex items-center justify-center h-80">
                   <div className="text-center">
@@ -576,14 +576,14 @@ export default function AnalyticsClientPage() {
                       />
                     </AreaChart>
                   )}
-                </ChartContainer>
+                        </ChartContainer>
               ) : (
                 <div className="flex items-center justify-center h-80">
                   <p className="text-gray-500">No performance data available</p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+                    </CardContent>
+                </Card>
 
           {/* Individual Charts Section */}
           <div className="grid gap-6 md:grid-cols-2">
@@ -719,7 +719,7 @@ export default function AnalyticsClientPage() {
                 ) : (
                   <div className="flex items-center justify-center h-64">
                     <p className="text-gray-500">No subscriber data available</p>
-                  </div>
+                        </div>
                 )}
               </CardContent>
             </Card>
@@ -732,29 +732,29 @@ export default function AnalyticsClientPage() {
                     <Eye className="w-5 h-5" />
                     View Growth
                   </CardTitle>
-                  <div className="flex items-center gap-2">
+                         <div className="flex items-center gap-2">
                     <Select value={viewChartType} onValueChange={(value: ChartType) => setViewChartType(value)}>
                       <SelectTrigger className="w-24">
                         <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
+                                </SelectTrigger>
+                                <SelectContent>
                         <SelectItem value="line">Line</SelectItem>
                         <SelectItem value="bar">Bar</SelectItem>
                         <SelectItem value="area">Area</SelectItem>
-                      </SelectContent>
-                    </Select>
+                                </SelectContent>
+                            </Select>
                     <ColorPicker 
                       color={viewColor} 
                       onChange={setViewColor} 
                       label="Color"
                     />
                   </div>
-                </div>
+                        </div>
                 <CardDescription className="text-gray-400">
                   {isLoading ? 'Loading data...' : `Data from ${format(safeDateRange.from, 'MMM dd')} to ${format(safeDateRange.to, 'MMM dd')}`}
                 </CardDescription>
-              </CardHeader>
-              <CardContent>
+                    </CardHeader>
+                    <CardContent>
                 {isLoading ? (
                   <div className="flex items-center justify-center h-64">
                     <div className="text-center">
@@ -852,19 +852,19 @@ export default function AnalyticsClientPage() {
                         />
                       </AreaChart>
                     )}
-                  </ChartContainer>
+                        </ChartContainer>
                 ) : (
                   <div className="flex items-center justify-center h-64">
                     <p className="text-gray-500">No view data available</p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
       ) : (
         <NoAnalyticsData hasChannel={false} />
       )}
-    </div>
-  );
+        </div>
+    );
 }

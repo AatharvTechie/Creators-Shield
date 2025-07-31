@@ -34,9 +34,17 @@ export async function getAllFeedback(): Promise<any[]> {
 
 export async function getFeedbackForUser(creatorEmail: string): Promise<any[]> {
   const baseUrl = getApiBaseUrl();
+  console.log('🔍 getFeedbackForUser - Requesting feedback for email:', creatorEmail);
+  
   const res = await fetch(`${baseUrl}/api/feedback/list?email=${encodeURIComponent(creatorEmail)}`);
-  if (!res.ok) throw new Error('Failed to fetch feedback for user');
-  return await res.json();
+  if (!res.ok) {
+    console.error('🔍 getFeedbackForUser - API error:', res.status, res.statusText);
+    throw new Error('Failed to fetch feedback for user');
+  }
+  
+  const data = await res.json();
+  console.log('🔍 getFeedbackForUser - Received feedbacks:', data.length);
+  return data;
 }
 
 export async function addFeedback(data: any): Promise<any> {

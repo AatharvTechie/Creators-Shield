@@ -10,9 +10,14 @@ export async function POST(req: Request) {
     console.log('Submit API - Received data:', data);
     
   const { creatorEmail, creatorName, ...feedbackData } = data;
-  if (!creatorEmail) {
-      console.log('Submit API - Missing creatorEmail');
-    return NextResponse.json({ success: false, message: 'Missing creatorEmail' }, { status: 400 });
+  console.log('Submit API - Received creatorEmail:', creatorEmail);
+  
+  if (!creatorEmail || creatorEmail === 'null' || creatorEmail === 'undefined') {
+      console.log('Submit API - Missing or invalid creatorEmail');
+    return NextResponse.json({ 
+      success: false, 
+      message: 'Missing or invalid creatorEmail. Please ensure you are logged in properly.' 
+    }, { status: 400 });
   }
     
   // Find creator by email
