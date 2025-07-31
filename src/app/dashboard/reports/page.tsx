@@ -138,15 +138,13 @@ function SubmitReportForm() {
 
 
   useEffect(() => {
-    const url = searchParams ? searchParams.get('url') : null;
-    const platform = searchParams ? searchParams.get('platform') : null;
-    if (url) {
-      form.setValue('suspectUrl', url);
+    if (suspectUrl) {
+      form.setValue('suspectUrl', suspectUrl);
     }
     if (platform) {
       form.setValue('platform', platform);
     }
-  }, [searchParams, form]);
+  }, [suspectUrl, platform, form]);
 
 
   useEffect(() => {
