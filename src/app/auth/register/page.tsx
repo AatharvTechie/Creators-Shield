@@ -18,7 +18,7 @@ function RegisterForm() {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const router = useRouter();
   
-  // Get search params in useEffect to avoid SSR issues
+  // Get search params in useEffect to avoid SSR issues - FRESH DEPLOYMENT
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     setRedirectTo(urlParams.get("redirect"));
