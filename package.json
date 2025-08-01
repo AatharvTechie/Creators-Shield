@@ -74,6 +74,7 @@
   },
   "devDependencies": {
     "@swc/core": "^1.12.11",
+    "@types/date-fns": "^2.5.3",
     "@types/formidable": "^3.4.5",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",

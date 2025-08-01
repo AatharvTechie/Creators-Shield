@@ -169,9 +169,11 @@ export default function OverviewPage() {
                   <div className="animate-pulse bg-gray-600 h-8 w-20 rounded"></div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   formatNumber(youtubeData.subscribers) : 
-                  activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.followers ?
-                  formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.followers) :
-                  'N/A'
+                  activePlatform === 'instagram' && platformStatus?.platforms?.find((p: any) => p.platform === 'instagram')?.data?.followers ?
+                    formatNumber(platformStatus.platforms.find((p: any) => p.platform === 'instagram')?.data?.followers) :
+                  activePlatform === 'tiktok' && platformStatus?.platforms?.find((p: any) => p.platform === 'tiktok')?.data?.followers ?
+                    formatNumber(platformStatus.platforms.find((p: any) => p.platform === 'tiktok')?.data?.followers) :
+                    'N/A'
                 }
               </div>
               <p className="text-xs text-gray-400">
@@ -194,8 +196,8 @@ export default function OverviewPage() {
                   <div className="animate-pulse bg-gray-600 h-8 w-20 rounded"></div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   formatNumber(youtubeData.views) : 
-                  activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.posts ?
-                  formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.posts) :
+                  activePlatform === 'instagram' && platformStatus?.platforms?.find((p: any) => p.platform === 'instagram')?.data?.posts ?
+                  formatNumber(platformStatus.platforms.find((p: any) => p.platform === 'instagram')?.data?.posts) :
                   'N/A'
                 }
               </div>
@@ -236,8 +238,8 @@ export default function OverviewPage() {
                   </div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   `${formatNumber(youtubeData.mostViewedVideo.views)} views` : 
-                  activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.totalLikes ?
-                  `${formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.totalLikes)} likes` :
+                  activePlatform === 'instagram' && platformStatus?.platforms?.find((p: any) => p.platform === 'instagram')?.data?.totalLikes ?
+                  `${formatNumber(platformStatus.platforms.find((p: any) => p.platform === 'instagram')?.data?.totalLikes)} likes` :
                   'No data'
                 }
               </div>

@@ -19,7 +19,6 @@ import {
   ExternalLink,
   Settings,
   Hand,
-  MessageCircle,
   Sparkles,
   Info
 } from 'lucide-react';

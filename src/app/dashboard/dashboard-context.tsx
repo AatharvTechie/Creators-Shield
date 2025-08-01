@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, UserAnalytics } from '@/lib/types';
-import { hasFeatureAccess, getFeatureLimit, isUnlimited, canAccessDashboardFeature, checkUsageLimit, getUpgradeSuggestion, UsageStats } from '@/lib/plan-features';
+import { checkFeatureAccess, getFeatureLimit, canAccessDashboardFeature, checkUsageLimit, getUpgradeSuggestion, UsageStats } from '@/lib/plan-features';
 
 interface DashboardData {
   user: User | null;
@@ -233,16 +233,10 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     },
     checkUsageLimits: () => {
       // All usage limits are unlimited
-      return {
-        canAddYouTubeChannel: true,
-        canAddVideo: true,
-        canDetectViolation: true,
-        canSubmitDmca: true,
-        canAddPlatform: true
-      };
+      return { isUnlimited: true };
     },
     getUpgradeSuggestion: () => {
-      // No upgrade suggestions needed since all features are available
+      // No upgrade suggestions for now
       return null;
     }
   };
