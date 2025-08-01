@@ -53,4 +53,34 @@ export function AutoConnectLoader({ message = 'Connecting your channel...' }: { 
       </div>
     </div>
   );
+}
+
+interface InteractiveLoaderProps {
+  show: boolean;
+  messages: string[];
+}
+
+export function InteractiveLoader({ show, messages }: InteractiveLoaderProps) {
+  if (!show) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl max-w-sm">
+        <div className="flex flex-col items-center">
+          <div className="relative">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            <div className="absolute inset-0 rounded-full border-2 border-blue-200 animate-pulse"></div>
+          </div>
+          {messages.map((message, index) => (
+            <p key={index} className="mt-4 text-sm text-gray-600 dark:text-gray-300 text-center font-medium">
+              {message}
+            </p>
+          ))}
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+            This may take a few moments...
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 } 

@@ -147,15 +147,51 @@ export async function checkDeactivationStatus(userId: string) {
   };
 }
 
-export async function submitReactivationRequest(userId: string, reason: string, explanation: string) {
+export async function submitReactivationRequest(userId: string, reason: string, explanation: string, req?: Request) {
   await connectToDatabase();
   
   console.log('📝 Submitting reactivation request:', { userId, reason, explanation });
   
   // First, let's check if the user exists and is deactivated
+  console.log('🔍 Looking for user with ID:', userId);
+  console.log('🔍 User ID type:', typeof userId);
+  
+  // Try to find user by ID
   // @ts-ignore
-  const existingUser = await Creator.findById(userId);
-  console.log('🔍 Existing user found:', existingUser ? {
+  let existingUser = await Creator.findById(userId);
+  
+  if (!existingUser) {
+    console.log('🔍 User not found by ID, trying alternative methods...');
+    
+    // Try to find user by email from JWT token
+    try {
+      // Get token from request headers
+      const authHeader = req?.headers?.authorization;
+      if (authHeader) {
+        const token = authHeader.replace('Bearer ', '');
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const userEmail = payload.email;
+        console.log('🔍 Trying to find user by email from token:', userEmail);
+        
+        // @ts-ignore
+        existingUser = await Creator.findOne({ email: userEmail });
+        if (existingUser) {
+          console.log('✅ User found by email:', {
+            id: existingUser._id.toString(),
+            name: existingUser.name,
+            email: existingUser.email,
+            status: existingUser.status,
+          });
+          // Update userId to the correct one
+          userId = existingUser._id.toString();
+        }
+      }
+    } catch (tokenError) {
+      console.error('❌ Error parsing token:', tokenError);
+    }
+  }
+  
+  console.log('🔍 Final user check:', existingUser ? {
     id: existingUser._id.toString(),
     name: existingUser.name,
     email: existingUser.email,
@@ -204,30 +240,35 @@ export async function submitReactivationRequest(userId: string, reason: string, 
     explanation: reactivationRequest.explanation
   });
   
-  // @ts-ignore
-  const result = await reactivationRequest.save();
-  
-  console.log('📊 Database save result:', result);
-  
-  // Also update the Creator model to mark that user has a reactivation request
-  // @ts-ignore
-  await Creator.updateOne(
-    { _id: userId },
-    { 
-      $set: { 
-        reactivationRequest: {
-          requestedAt: new Date(),
-          reason: reason,
-          explanation: explanation,
-          status: 'pending'
+  try {
+    // @ts-ignore
+    const result = await reactivationRequest.save();
+    
+    console.log('📊 Database save result:', result);
+    
+    // Also update the Creator model to mark that user has a reactivation request
+    // @ts-ignore
+    await Creator.updateOne(
+      { _id: userId },
+      { 
+        $set: { 
+          reactivationRequest: {
+            requestedAt: new Date(),
+            reason: reason,
+            explanation: explanation,
+            status: 'pending'
+          }
         }
       }
-    }
-  );
-  
-  console.log('✅ Reactivation request saved successfully');
-  
-  return result;
+    );
+    
+    console.log('✅ Reactivation request saved successfully');
+    
+    return result;
+  } catch (dbError) {
+    console.error('❌ Database error while saving reactivation request:', dbError);
+    throw new Error('Failed to save reactivation request to database. Please try again.');
+  }
 }
 
 export async function updateReactivationStatus(userId: string, status: 'approved' | 'rejected') {

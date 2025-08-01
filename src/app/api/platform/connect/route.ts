@@ -45,41 +45,22 @@ export async function POST(req: NextRequest) {
 
     // Fetch platform-specific data
     if (platform === 'youtube') {
-      try {
-        const youtubeData = await getChannelStats(accountId);
-        if (!youtubeData) {
-          return NextResponse.json({ 
-            error: 'Invalid YouTube Channel ID. Please check the channel ID and try again.' 
-          }, { status: 400 });
-        }
-        platformData = {
-          channelId: youtubeData.id,
-          subscribers: youtubeData.subscribers,
-          views: youtubeData.views,
-          videos: youtubeData.videos
-        };
-      } catch (youtubeError) {
-        console.error('YouTube API error:', youtubeError);
-        return NextResponse.json({ 
-          error: 'Failed to fetch YouTube channel data. Please verify the Channel ID is correct.' 
-        }, { status: 400 });
-      }
+      const youtubeData = await getChannelStats(accountId);
+      platformData = {
+        channelId: youtubeData.id,
+        subscribers: youtubeData.subscribers,
+        views: youtubeData.views,
+        videos: youtubeData.videos
+      };
     } else if (platform === 'instagram') {
-      try {
-        // For testing, pass 'test' as access token to get mock data
-        const instagramData = await getInstagramStats(accountId, 'test');
-        platformData = {
-          accountId: instagramData.id,
-          followers: instagramData.followers,
-          posts: instagramData.posts,
-          totalLikes: instagramData.totalLikes
-        };
-      } catch (instagramError) {
-        console.error('Instagram API error:', instagramError);
-        return NextResponse.json({ 
-          error: 'Failed to fetch Instagram account data.' 
-        }, { status: 400 });
-      }
+      // For testing, pass 'test' as access token to get mock data
+      const instagramData = await getInstagramStats(accountId, 'test');
+      platformData = {
+        accountId: instagramData.id,
+        followers: instagramData.followers,
+        posts: instagramData.posts,
+        totalLikes: instagramData.totalLikes
+      };
     } else {
       return NextResponse.json({ 
         error: 'Unsupported platform' 
@@ -112,7 +93,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error connecting platform:', error);
     return NextResponse.json({ 
-      error: 'Failed to connect platform. Please try again later.' 
+      error: 'Failed to connect platform' 
     }, { status: 500 });
   }
 } 

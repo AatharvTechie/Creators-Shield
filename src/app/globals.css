@@ -57,7 +57,7 @@ span {
     background-clip: content-box;
     transition: all 0.3s ease;
   }
-
+j
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
     transform: scale(1.1);

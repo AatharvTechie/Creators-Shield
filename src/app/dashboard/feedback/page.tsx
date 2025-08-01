@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { StarRating } from '@/components/ui/star-rating';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, MessageSquare, ChevronDown, ChevronUp, Hand } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getFeedbackForUser, addFeedback, markFeedbackAsRead } from '@/lib/feedback-store';
 import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
@@ -106,6 +106,18 @@ export default function FeedbackPage() {
   const [disconnectRequest, setDisconnectRequest] = React.useState(false);
   const [hasNewReplies, setHasNewReplies] = React.useState(false);
   const [expandedReplies, setExpandedReplies] = React.useState<Set<string>>(new Set());
+  const [showDisconnectGuide, setShowDisconnectGuide] = React.useState(false);
+
+  // Check if user was redirected from integrations page
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromIntegrations = urlParams.get('from');
+    if (fromIntegrations === 'integrations') {
+      setShowDisconnectGuide(true);
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const form = useForm<z.infer<typeof feedbackFormSchema>>({
     resolver: zodResolver(feedbackFormSchema),
@@ -301,6 +313,53 @@ export default function FeedbackPage() {
 
   return (
     <div className="space-y-6">
+      {/* Disconnect Guide for users redirected from integrations */}
+      {showDisconnectGuide && (
+        <Card className="border-blue-500/30 bg-blue-500/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-600">
+              <MessageSquare className="w-5 h-5" />
+              Disconnect Request Guide
+            </CardTitle>
+            <CardDescription className="text-blue-500">
+              You were redirected here to submit your platform disconnect request
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">1</div>
+                <div>
+                  <p className="font-medium text-blue-700">Select "Request to disconnect/change my YouTube channel"</p>
+                  <p className="text-sm text-blue-600">This will automatically set the correct feedback type</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">2</div>
+                <div>
+                  <p className="font-medium text-blue-700">Fill in your request details</p>
+                  <p className="text-sm text-blue-600">Explain why you want to disconnect your channel</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold">3</div>
+                <div>
+                  <p className="font-medium text-blue-700">Submit and wait for admin approval</p>
+                  <p className="text-sm text-blue-600">We'll review your request and get back to you</p>
+                </div>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              className="mt-4 border-blue-500 text-blue-600 hover:bg-blue-50"
+              onClick={() => setShowDisconnectGuide(false)}
+            >
+              Got it! 👍
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Send Feedback</CardTitle>

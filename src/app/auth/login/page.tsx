@@ -42,10 +42,17 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    
+    // Get user agent for device tracking
+    const userAgent = typeof window !== 'undefined' ? navigator.userAgent : 'Unknown';
+    
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({
+        ...form,
+        userAgent
+      }),
     });
     const data = await res.json();
     setLoading(false);

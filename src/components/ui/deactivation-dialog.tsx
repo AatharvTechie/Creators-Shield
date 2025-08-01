@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, Shield, Send, CheckCircle, XCircle } from "lucide-react";
+import { AdvancedLoader } from "@/components/ui/advanced-loader";
 
 interface DeactivationDialogProps {
   isOpen: boolean;
@@ -77,11 +78,13 @@ export function DeactivationDialog({
         setSubmitted(true);
       } else {
         console.error('❌ Failed to submit reactivation request:', responseData);
-        throw new Error(responseData.message || 'Failed to submit reactivation request');
+        const errorMessage = responseData.message || responseData.error || 'Failed to submit reactivation request';
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('❌ Error submitting reactivation request:', error);
-      alert('Failed to submit reactivation request. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit reactivation request. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -290,8 +293,8 @@ export function DeactivationDialog({
               >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Submitting...
+                    <AdvancedLoader size="sm" variant="spinner" color="primary" />
+                    <span className="ml-2">Submitting...</span>
                   </>
                 ) : (
                   <>

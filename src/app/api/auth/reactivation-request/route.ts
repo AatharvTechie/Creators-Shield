@@ -20,8 +20,13 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
+    // Validate userId format
+    console.log('🔍 Validating userId:', userId);
+    console.log('🔍 UserId type:', typeof userId);
+    console.log('🔍 UserId length:', userId?.length);
+
     console.log('✅ All required fields present, calling submitReactivationRequest');
-    const result = await submitReactivationRequest(userId, reason, explanation);
+    const result = await submitReactivationRequest(userId, reason, explanation, req);
     
     console.log('📊 submitReactivationRequest result:', result);
     
@@ -32,10 +37,30 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error('❌ Reactivation request error:', error);
+    
+    // Handle specific error types
+    let statusCode = 500;
+    let errorMessage = 'An error occurred while submitting your reactivation request. Please try again.';
+    
+    if (error instanceof Error) {
+      if (error.message.includes('User not found')) {
+        statusCode = 404;
+        errorMessage = 'User not found. Please check your account details.';
+      } else if (error.message.includes('not deactivated')) {
+        statusCode = 400;
+        errorMessage = 'Your account is not deactivated. Reactivation request not needed.';
+      } else if (error.message.includes('already have a pending')) {
+        statusCode = 409;
+        errorMessage = 'You already have a pending reactivation request. Please wait for admin review.';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
     return NextResponse.json({ 
       error: 'Failed to submit reactivation request',
-      message: 'An error occurred while submitting your reactivation request. Please try again.',
+      message: errorMessage,
       details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    }, { status: statusCode });
   }
 } 

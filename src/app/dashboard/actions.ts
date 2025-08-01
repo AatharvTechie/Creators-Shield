@@ -102,12 +102,12 @@ export async function getDashboardData(userEmail?: string): Promise<DashboardDat
     return { 
       analytics: userAnalytics, 
       activity: activity, 
-      user: JSON.parse(JSON.stringify(dbUser)),
+      user: dbUser,
     };
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
     if (dbUser) {
-        return { analytics: null, activity: [], user: JSON.parse(JSON.stringify(dbUser)) };
+        return { analytics: null, activity: [], user: dbUser };
     }
     return null;
   }

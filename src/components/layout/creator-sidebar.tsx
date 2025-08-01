@@ -20,7 +20,8 @@ import {
   Settings, 
   MessageSquare,
   Crown,
-  Lock
+  Lock,
+  Link2
 } from "lucide-react";
 
 const NextLink = Link;
@@ -108,6 +109,12 @@ export function CreatorSidebar() {
       label: 'Feedback & Support', 
       icon: MessageSquare, 
       requiresConnection: false
+    },
+    { 
+      href: '/dashboard/integrations', 
+      label: 'Integrations', 
+      icon: Link2, 
+      requiresConnection: false
     }
   ];
 
@@ -135,32 +142,33 @@ export function CreatorSidebar() {
   const canAccessYouTubeFeatures = isYouTubeConnected;
   
   return (
-    <Sidebar>
-      <SidebarHeader>
-        <div className="flex items-center gap-3 p-2">
-            <NextLink href="/dashboard/settings" className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
+    <Sidebar className="w-full sm:w-64 lg:w-72">
+      <SidebarHeader className="p-2 sm:p-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+            <NextLink href="/dashboard/settings" className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <Avatar className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0">
                     <AvatarImage src={avatar} data-ai-hint="profile picture" />
-                    <AvatarFallback>{avatarFallback}</AvatarFallback>
+                    <AvatarFallback className="text-xs sm:text-sm">{avatarFallback}</AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col">
-                    <span className="font-semibold text-sidebar-foreground truncate">{creatorName}</span>
-                    <span className="text-xs text-sidebar-foreground/70">Creator Dashboard</span>
+                <div className="flex flex-col min-w-0 flex-1">
+                    <span className="font-semibold text-sidebar-foreground truncate text-sm sm:text-base">{creatorName}</span>
+                    <span className="text-xs text-sidebar-foreground/70 hidden sm:block">Creator Dashboard</span>
                     {/* Plan Badge */}
                     <div className="flex items-center gap-1 mt-1">
                       <Badge variant={userPlan === 'yearly' ? 'default' : userPlan === 'monthly' ? 'secondary' : 'outline'} className="text-xs">
                         {userPlan === 'free' && <Crown className="w-3 h-3 mr-1" />}
                         {userPlan === 'monthly' && <BarChart className="w-3 h-3 mr-1" />}
                         {userPlan === 'yearly' && <BarChart className="w-3 h-3 mr-1" />}
-                        {userPlan.charAt(0).toUpperCase() + userPlan.slice(1)} Plan
+                        <span className="hidden sm:inline">{userPlan.charAt(0).toUpperCase() + userPlan.slice(1)} Plan</span>
+                        <span className="sm:hidden">{userPlan.charAt(0).toUpperCase() + userPlan.slice(1)}</span>
                       </Badge>
                     </div>
                 </div>
             </NextLink>
         </div>
       </SidebarHeader>
-      <SidebarContent className="sidebar-scrollbar">
-        <SidebarMenu className="gap-4">
+      <SidebarContent className="sidebar-scrollbar px-2 sm:px-4">
+        <SidebarMenu className="gap-2 sm:gap-4">
           {/* Main Menu Items */}
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -169,13 +177,13 @@ export function CreatorSidebar() {
 
             return (
               <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton asChild isActive={isActive} disabled={isDisabled}>
-                  <NextLink href={isDisabled ? '#' : item.href} className="flex items-center gap-3">
-                    <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                    {isDisabled && <Lock className="h-3 w-3 ml-auto text-muted-foreground" />}
+                <SidebarMenuButton asChild isActive={isActive} disabled={isDisabled} className="text-sm sm:text-base">
+                  <NextLink href={isDisabled ? '#' : item.href} className="flex items-center gap-2 sm:gap-3 py-2 sm:py-3">
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                    {isDisabled && <Lock className="h-3 w-3 ml-auto text-muted-foreground flex-shrink-0" />}
                     {item.href === '/dashboard/feedback' && hasUnread && (
-                      <Badge variant="destructive" className="ml-auto h-2 w-2 rounded-full p-0" />
+                      <Badge variant="destructive" className="ml-auto h-2 w-2 rounded-full p-0 flex-shrink-0" />
                     )}
                   </NextLink>
                 </SidebarMenuButton>
@@ -184,11 +192,11 @@ export function CreatorSidebar() {
           })}
         </SidebarMenu>
       </SidebarContent>
-      <SidebarFooter className="border-t border-gray-700 p-4">
-        <SidebarMenuButton asChild>
-          <NextLink href="/dashboard/settings" className="flex items-center gap-3">
-            <Settings className="h-4 w-4" />
-            <span>Settings</span>
+      <SidebarFooter className="border-t border-gray-700 p-2 sm:p-4">
+        <SidebarMenuButton asChild className="text-sm sm:text-base">
+          <NextLink href="/dashboard/settings" className="flex items-center gap-2 sm:gap-3 py-2 sm:py-3">
+            <Settings className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">Settings</span>
           </NextLink>
         </SidebarMenuButton>
       </SidebarFooter>

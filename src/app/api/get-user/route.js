@@ -1,5 +1,5 @@
 import connectToDatabase from "@/lib/mongodb";
-import Creator from "@/models/Creator.js";
+import Creator from "@/models/Creator";
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);

@@ -52,32 +52,12 @@ export default function SettingsPage() {
   const user = dashboardData?.user;
   const profileName = user?.youtubeChannel?.title || user?.displayName || user?.name || 'Creator';
   const profileAvatar = user?.avatar || '/default-avatar.png';
-  const [disconnectApproved, setDisconnectApproved] = useState(false);
-  const [disconnectApprovedLoading, setDisconnectApprovedLoading] = useState(true);
-  const [disconnecting, setDisconnecting] = useState(false);
   const dashboardRefresh = useDashboardRefresh();
   const [connectingNewChannel, setConnectingNewChannel] = useState(false);
   const [waitingForDashboard, setWaitingForDashboard] = useState<string | null>(null);
   const dashboardLoading = useDashboardLoading();
 
-  useEffect(() => {
-    async function fetchDisconnectApproved() {
-      if (user && user.email) {
-        try {
-          const res = await fetch(`/api/get-user?email=${encodeURIComponent(user.email)}`);
-          const data = await res.json();
-          setDisconnectApproved(!!data.disconnectApproved);
-        } catch (err) {
-          setDisconnectApproved(false);
-        } finally {
-          setDisconnectApprovedLoading(false);
-        }
-      } else {
-        setDisconnectApprovedLoading(false);
-      }
-    }
-    fetchDisconnectApproved();
-  }, [user]);
+
 
   // Track changes for enabling Save button
   useEffect(() => {
@@ -89,6 +69,7 @@ export default function SettingsPage() {
     if (user) {
       setFullName(user.displayName || user.name || '');
       setEmail(user.email || '');
+      setEmailInput(user.email || '');
       setAccountLoading(false);
     }
   }, [user]);
@@ -145,12 +126,29 @@ export default function SettingsPage() {
       });
   }, [email]);
 
+  // Refresh devices when user changes
+  useEffect(() => {
+    if (user?.email) {
+      setDevicesLoading(true);
+      fetch(`/api/settings/devices?email=${user.email}`)
+        .then(res => res.json())
+        .then(data => {
+          setDevices(data.devices || []);
+          setDevicesLoading(false);
+        })
+        .catch(() => {
+          setDevicesError('Failed to load devices');
+          setDevicesLoading(false);
+        });
+    }
+  }, [user?.email]);
+
   // Track changes for enabling Security Save button
   useEffect(() => {
     setSecurityChanged(true);
   }, [phone, twoFA]);
 
-  const [showDisconnectInfo, setShowDisconnectInfo] = useState(false);
+
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -159,7 +157,7 @@ export default function SettingsPage() {
   const passwordInputRef = useRef(null);
   const [twoFASetupMode, setTwoFASetupMode] = useState<null | 'setup' | 'disable'>(null);
   const [verificationStep, setVerificationStep] = useState<'email' | 'otp' | 'reset'>('email');
-  const [emailInput, setEmailInput] = useState(email || '');
+  const [emailInput, setEmailInput] = useState(user?.email || email || '');
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -177,35 +175,35 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen w-full px-2 md:px-0">
-      <div className="max-w-3xl mx-auto pt-8 pb-4">
+      <div className="max-w-3xl mx-auto pt-4 sm:pt-8 pb-4">
         {/* Profile summary card */}
-        <div className="flex items-center gap-4 bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl px-8 py-7 mb-10 animate-fade-in">
-          <img src={youtubeChannel && youtubeChannel.thumbnail ? youtubeChannel.thumbnail : profileAvatar} alt="Avatar" className="w-16 h-16 rounded-full border-2 border-primary/60 shadow-md" />
+        <div className="flex items-center gap-3 sm:gap-4 bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl px-4 sm:px-8 py-4 sm:py-7 mb-6 sm:mb-10 animate-fade-in">
+          <img src={youtubeChannel && youtubeChannel.thumbnail ? youtubeChannel.thumbnail : profileAvatar} alt="Avatar" className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-primary/60 shadow-md" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xl font-bold text-primary">{profileName}</span>
+              <span className="text-lg sm:text-xl font-bold text-primary">{profileName}</span>
               {youtubeChannel && <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-700/30 text-green-400 font-semibold">YouTube Connected</span>}
             </div>
-            <div className="text-muted-foreground text-sm">{email}</div>
+            <div className="text-muted-foreground text-xs sm:text-sm">{email}</div>
           </div>
         </div>
         {/* 2-column grid for main settings cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
           {/* General Section */}
-          <div className="bg-card/80 backdrop-blur border border-primary/30 shadow-xl rounded-2xl p-8 animate-slide-in-up relative overflow-hidden">
+          <div className="bg-card/80 backdrop-blur border border-primary/30 shadow-xl rounded-2xl p-4 sm:p-8 animate-slide-in-up relative overflow-hidden">
             <div className="absolute left-0 top-6 h-8 w-1 bg-primary rounded-r-full" />
-            <h2 className="text-xl font-bold mb-6 pl-4 flex items-center gap-2">General</h2>
-            <div className="flex flex-col gap-6">
+            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 pl-4 flex items-center gap-2">General</h2>
+            <div className="flex flex-col gap-4 sm:gap-6">
               <div>
-                <label className="block mb-1 font-medium">{t('Theme')}</label>
-                <div className="flex gap-4">
-                  <Button variant={theme === 'light' ? 'default' : 'outline'} onClick={() => { setTheme('light'); setThemeNext('light'); }}>{t('Light') || 'Light'}</Button>
-                  <Button variant={theme === 'dark' ? 'default' : 'outline'} onClick={() => { setTheme('dark'); setThemeNext('dark'); }}>{t('Dark') || 'Dark'}</Button>
-                  <Button variant={theme === 'system' ? 'default' : 'outline'} onClick={() => { setTheme('system'); setThemeNext('system'); }}>{t('System') || 'System'}</Button>
+                <label className="block mb-1 font-medium text-sm sm:text-base">{t('Theme')}</label>
+                <div className="flex gap-2 sm:gap-4 flex-wrap">
+                  <Button variant={theme === 'light' ? 'default' : 'outline'} onClick={() => { setTheme('light'); setThemeNext('light'); }} className="text-xs sm:text-sm">{t('Light') || 'Light'}</Button>
+                  <Button variant={theme === 'dark' ? 'default' : 'outline'} onClick={() => { setTheme('dark'); setThemeNext('dark'); }} className="text-xs sm:text-sm">{t('Dark') || 'Dark'}</Button>
+                  <Button variant={theme === 'system' ? 'default' : 'outline'} onClick={() => { setTheme('system'); setThemeNext('system'); }} className="text-xs sm:text-sm">{t('System') || 'System'}</Button>
                 </div>
               </div>
               <Button
-                className="mt-4"
+                className="mt-4 text-sm sm:text-base"
                 disabled={!hasChanged || isSaving}
                 onClick={async () => {
                   setIsSaving(true);
@@ -238,59 +236,59 @@ export default function SettingsPage() {
             </div>
           </div>
           {/* Account Section */}
-          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-8 animate-slide-in-up relative overflow-hidden">
+          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-4 sm:p-8 animate-slide-in-up relative overflow-hidden">
             <div className="absolute left-0 top-6 h-8 w-1 bg-blue-500 rounded-r-full" />
-            <h2 className="text-xl font-bold mb-6 pl-4 flex items-center gap-2">Account</h2>
-            <div className="flex flex-col gap-6">
+            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 pl-4 flex items-center gap-2">Account</h2>
+            <div className="flex flex-col gap-4 sm:gap-6">
               <div>
-                <label className="block mb-1 font-medium">{t('Legal Full Name')}</label>
+                <label className="block mb-1 font-medium text-sm sm:text-base">{t('Legal Full Name')}</label>
                 {accountLoading ? (
                   <div className="h-10 bg-muted rounded animate-pulse w-full" />
                 ) : (
-                  <Input value={fullName} readOnly className="opacity-70 cursor-not-allowed" />
+                  <Input value={fullName} readOnly className="opacity-70 cursor-not-allowed text-sm sm:text-base" />
                 )}
               </div>
               <div>
-                <label className="block mb-1 font-medium">{t('Email')}</label>
+                <label className="block mb-1 font-medium text-sm sm:text-base">{t('Email')}</label>
                 {accountLoading ? (
                   <div className="h-10 bg-muted rounded animate-pulse w-full" />
                 ) : (
-                  <Input value={email} readOnly className="opacity-70 cursor-not-allowed" />
+                  <Input value={email} readOnly className="opacity-70 cursor-not-allowed text-sm sm:text-base" />
                 )}
               </div>
               <div>
-                <label className="block mb-1 font-medium">{t('Password')}</label>
+                <label className="block mb-1 font-medium text-sm sm:text-base">{t('Password')}</label>
                 <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="mt-1">{t('Change Password')}</Button>
+                    <Button variant="outline" className="mt-1 text-sm sm:text-base">{t('Change Password')}</Button>
                   </DialogTrigger>
                   <DialogContent className="bg-card shadow-2xl border border-border rounded-2xl p-0 max-w-md animate-fade-in">
                     {/* Stepper */}
-                    <div className="flex items-center justify-between px-8 pt-8 pb-2">
+                    <div className="flex items-center justify-between px-4 sm:px-8 pt-4 sm:pt-8 pb-2">
                       <div className="flex-1 flex flex-col items-center">
-                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='email' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>1</div>
+                        <div className={`w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='email' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>1</div>
                         <span className="text-xs mt-1">Email</span>
                       </div>
                       <div className="flex-1 h-0.5 bg-border mx-1" />
                       <div className="flex-1 flex flex-col items-center">
-                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='otp' ? 'border-primary bg-primary/10 text-primary' : verificationStep==='reset' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>2</div>
+                        <div className={`w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='otp' ? 'border-primary bg-primary/10 text-primary' : verificationStep==='reset' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>2</div>
                         <span className="text-xs mt-1">OTP</span>
                       </div>
                       <div className="flex-1 h-0.5 bg-border mx-1" />
                       <div className="flex-1 flex flex-col items-center">
-                        <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='reset' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>3</div>
+                        <div className={`w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='reset' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>3</div>
                         <span className="text-xs mt-1">New Password</span>
                       </div>
                     </div>
-                    <DialogHeader className="px-8 pt-2 pb-0">
-                      <DialogTitle className="flex items-center gap-2 text-lg">
+                    <DialogHeader className="px-4 sm:px-8 pt-2 pb-0">
+                      <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
                         {verificationStep === 'reset' && passwordSuccess ? (
-                          <span className="inline-flex items-center text-green-600"><svg className="w-6 h-6 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Success</span>
+                          <span className="inline-flex items-center text-green-600"><svg className="w-6 h-6 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Success</span>
                         ) : (
                           <span>Change Password</span>
                         )}
                       </DialogTitle>
-                      <DialogDescription>
+                      <DialogDescription className="text-sm sm:text-base">
                         {verificationStep === 'email' && (
                           <span className="flex items-center gap-2 text-primary"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>For your security, please verify your email before changing your password.</span>
                         )}
@@ -311,12 +309,13 @@ export default function SettingsPage() {
                         <label className="block text-sm font-medium mb-1" htmlFor="change-email"><span className="inline-flex items-center gap-1"><svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 12H8m8 0a4 4 0 11-8 0 4 4 0 018 0z" /></svg>Email Address</span></label>
                         <Input
                           id="change-email"
-                          aria-label="Enter your email"
-                          placeholder="Enter your email"
+                          aria-label="Your email address"
+                          placeholder="Your email address"
                           value={emailInput}
-                          onChange={e => setEmailInput(e.target.value)}
-                          className="bg-background border-border focus:border-primary"
+                          readOnly
+                          className="bg-muted border-border text-muted-foreground cursor-not-allowed"
                         />
+                        <p className="text-xs text-muted-foreground">Your email address cannot be changed for security reasons.</p>
                         <div className="flex justify-end gap-2 mt-2">
                           <DialogClose asChild>
                             <Button type="button" variant="ghost" className="rounded-md" disabled={isSending}>Cancel</Button>
@@ -329,7 +328,7 @@ export default function SettingsPage() {
                                 const res = await fetch('/api/send-email-otp', {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ email: emailInput }),
+                                  body: JSON.stringify({ email: user?.email || emailInput }),
                                 });
                                 const data = await res.json();
                                 if (data.success) {
@@ -343,7 +342,7 @@ export default function SettingsPage() {
                                 setIsSending(false);
                               }
                             }}
-                            disabled={isSending || !/^\S+@\S+\.\S+$/.test(emailInput)}
+                            disabled={isSending}
                             className="rounded-md"
                           >
                             {isSending ? 'Sending...' : 'Send OTP'}
@@ -374,7 +373,7 @@ export default function SettingsPage() {
                                 const res = await fetch('/api/verify-email-otp', {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ email: emailInput, otp }),
+                                  body: JSON.stringify({ email: user?.email || emailInput, otp }),
                                 });
                                 const data = await res.json();
                                 if (data.success) {
@@ -415,7 +414,7 @@ export default function SettingsPage() {
                           const res = await fetch('/api/save-user', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: emailInput, password: hashed }),
+                            body: JSON.stringify({ email: user?.email || emailInput, password: hashed }),
                           });
                           const data = await res.json();
                           if (data.success) {
@@ -479,22 +478,22 @@ export default function SettingsPage() {
             </div>
           </div>
           {/* Security Section */}
-          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-8 animate-slide-in-up relative overflow-hidden">
+          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-4 sm:p-8 animate-slide-in-up relative overflow-hidden">
             <div className="absolute left-0 top-6 h-8 w-1 bg-yellow-500 rounded-r-full" />
-            <h2 className="text-xl font-bold mb-6 pl-4 flex items-center gap-2">Security</h2>
-            <div className="flex flex-col gap-6">
+            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 pl-4 flex items-center gap-2">Security</h2>
+            <div className="flex flex-col gap-4 sm:gap-6">
               <div>
-                <label className="block mb-1 font-medium">Phone Number</label>
-                <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Add or update phone number" />
+                <label className="block mb-1 font-medium text-sm sm:text-base">Phone Number</label>
+                <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Add or update phone number" className="text-sm sm:text-base" />
               </div>
               <div>
-                <span className="font-medium">Two-Factor Authentication</span>
+                <span className="font-medium text-sm sm:text-base">Two-Factor Authentication</span>
                 {twoFAEnabled ? (
                   <div className="mt-2">
-                    <div className="text-green-600 font-medium mb-2">2FA is enabled</div>
+                    <div className="text-green-600 font-medium mb-2 text-sm sm:text-base">2FA is enabled</div>
                     <Button
                       variant="outline"
-                      className="mb-2"
+                      className="mb-2 text-sm sm:text-base"
                       onClick={() => {
                         setTwoFASetupMode('disable');
                         setTwoFACode('');
@@ -539,14 +538,14 @@ export default function SettingsPage() {
                           onChange={e => setTwoFACode(e.target.value)}
                           placeholder="Enter 6-digit code"
                           maxLength={6}
-                          className="w-40"
+                          className="w-40 text-sm sm:text-base"
                           required
                         />
                         <div className="flex gap-2">
-                          <Button type="submit" disabled={twoFALoading} variant="destructive">
+                          <Button type="submit" disabled={twoFALoading} variant="destructive" className="text-sm sm:text-base">
                             {twoFALoading ? 'Disabling...' : 'Confirm Disable'}
                           </Button>
-                          <Button type="button" variant="ghost" onClick={() => setTwoFASetupMode(null)} disabled={twoFALoading}>Cancel</Button>
+                          <Button type="button" variant="ghost" onClick={() => setTwoFASetupMode(null)} disabled={twoFALoading} className="text-sm sm:text-base">Cancel</Button>
                         </div>
                         {twoFAError && <div className="text-destructive text-sm">{twoFAError}</div>}
                       </form>
@@ -582,6 +581,7 @@ export default function SettingsPage() {
                         }
                       }}
                       disabled={twoFALoading}
+                      className="text-sm sm:text-base"
                     >
                       Set up 2FA
                     </Button>
@@ -626,14 +626,14 @@ export default function SettingsPage() {
                           onChange={e => setTwoFACode(e.target.value)}
                           placeholder="Enter 6-digit code"
                           maxLength={6}
-                          className="w-40"
+                          className="w-40 text-sm sm:text-base"
                           required
                         />
                         <div className="flex gap-2">
-                          <Button type="submit" disabled={twoFALoading}>
+                          <Button type="submit" disabled={twoFALoading} className="text-sm sm:text-base">
                             {twoFALoading ? 'Enabling...' : 'Verify & Enable'}
                           </Button>
-                          <Button type="button" variant="ghost" onClick={() => setTwoFASetupMode(null)} disabled={twoFALoading}>Cancel</Button>
+                          <Button type="button" variant="ghost" onClick={() => setTwoFASetupMode(null)} disabled={twoFALoading} className="text-sm sm:text-base">Cancel</Button>
                         </div>
                         {twoFAError && <div className="text-destructive text-sm">{twoFAError}</div>}
                       </form>
@@ -642,7 +642,7 @@ export default function SettingsPage() {
                 )}
               </div>
               <Button
-                className="mt-4"
+                className="mt-4 text-sm sm:text-base"
                 disabled={!securityChanged || securitySaving}
                 onClick={async () => {
                   setSecuritySaving(true);
@@ -673,7 +673,7 @@ export default function SettingsPage() {
                 {securitySaving ? 'Saving...' : 'Save Changes'}
               </Button>
               <div>
-                <label className="block mb-1 font-medium">Logged-in Devices</label>
+                <label className="block mb-1 font-medium text-sm sm:text-base">Logged-in Devices</label>
                 {devicesLoading ? (
                   <div className="text-muted-foreground text-sm">Loading devices...</div>
                 ) : devicesError ? (
@@ -683,28 +683,37 @@ export default function SettingsPage() {
                    {devices.length === 0 ? (
                      <li className="text-muted-foreground text-sm">No active devices found.</li>
                    ) : devices.map(device => (
-                     <li key={device.id} className="flex flex-col md:flex-row md:items-center md:justify-between bg-muted rounded px-3 py-2">
-                       <div>
-                         <div className="font-medium">{device.device || 'Unknown Device'}</div>
+                     <li key={device.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-muted rounded px-3 py-2">
+                       <div className="flex-1 min-w-0">
+                         <div className="font-medium text-sm sm:text-base truncate">{device.device || 'Unknown Device'}</div>
                          <div className="text-xs text-muted-foreground break-all">{device.userAgent}</div>
-                         <div className="text-xs text-muted-foreground">Last active: {device.lastActive ? new Date(device.lastActive).toLocaleString() : 'Unknown'}</div>
+                         <div className="text-xs text-muted-foreground">
+                           Login time: {device.createdAt ? new Date(device.createdAt).toLocaleString() : 'Unknown'}
+                         </div>
+                         <div className="text-xs text-muted-foreground">
+                           Last active: {device.lastActive ? new Date(device.lastActive).toLocaleString() : 'Unknown'}
+                         </div>
                        </div>
                        <Button
                          size="sm"
                          variant="outline"
-                         className="mt-2 md:mt-0"
+                         className="mt-2 sm:mt-0 text-xs sm:text-sm"
                          onClick={async () => {
-                           const res = await fetch('/api/settings/devices', {
-                             method: 'DELETE',
-                             headers: { 'Content-Type': 'application/json' },
-                             body: JSON.stringify({ email, sessionId: device.id }),
-                           });
-                           const data = await res.json();
-                           if (data.success) {
-                             setDevices(devices.filter(d => d.id !== device.id));
-                             toast({ title: 'Device revoked', description: `Device has been revoked.` });
-                           } else {
-                             toast({ title: 'Error', description: data.error || 'Failed to revoke device', variant: 'destructive' });
+                           try {
+                             const res = await fetch('/api/settings/devices', {
+                               method: 'DELETE',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ email, sessionId: device.id }),
+                             });
+                             const data = await res.json();
+                             if (data.success) {
+                               setDevices(devices.filter(d => d.id !== device.id));
+                               toast({ title: 'Device revoked', description: `Device has been revoked.` });
+                             } else {
+                               toast({ title: 'Error', description: data.error || 'Failed to revoke device', variant: 'destructive' });
+                             }
+                           } catch (error) {
+                             toast({ title: 'Error', description: 'Failed to revoke device', variant: 'destructive' });
                            }
                          }}
                        >
@@ -714,118 +723,27 @@ export default function SettingsPage() {
                    ))}
                   </ul>
                 )}
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Devices are automatically tracked when you log in from different browsers or devices.
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Connected Platforms Section */}
-          <div className="col-span-2 bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-8 animate-slide-in-up relative overflow-hidden">
-            <div className="absolute left-0 top-6 h-8 w-1 bg-blue-500 rounded-r-full" />
-            <h2 className="text-xl font-bold mb-6 pl-4 flex items-center gap-2">Connected Platforms</h2>
-            <div className="flex flex-col gap-4">
-              {youtubeChannelId && youtubeChannel ? (
-                <div className="flex items-center justify-between p-4 bg-background/50 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <img src={youtubeChannel.thumbnail} alt="Channel" className="w-10 h-10 rounded-full border" />
-                    <div>
-                      <div className="font-medium">{youtubeChannel.title}</div>
-                      <div className="text-sm text-muted-foreground">YouTube Channel</div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={platformLoading}
-                    onClick={() => setShowDisconnectInfo(true)}
-                  >
-                    Disconnect
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <div className="text-lg font-medium mb-2">No platforms connected</div>
-                  <div className="text-sm mb-4">Connect your platforms to start monitoring your content</div>
-                  <Button onClick={() => router.push('/dashboard/integrations')}>
-                    Go to Integrations
-                  </Button>
-                </div>
-              )}
-              
-              {showDisconnectInfo && (
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-300 rounded max-w-xl w-full flex items-start gap-3 animate-fade-in">
-                  <Info className="w-6 h-6 text-blue-500 mt-1 flex-shrink-0" />
-                  <div className="flex-1">
-                    {disconnectApproved ? (
-                      <>
-                        <div className="font-semibold text-green-800 mb-1">Disconnect Approved</div>
-                        <div className="text-green-700 text-sm mb-2" style={{whiteSpace: 'normal'}}>
-                          Your disconnect request has been <b>approved by the admin</b>. You may now disconnect your channel.
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            disabled={disconnecting}
-                            onClick={async () => {
-                              setDisconnecting(true);
-                              try {
-                                const res = await fetch('/api/settings/reset-connections', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ email }),
-                                });
-                                const data = await res.json();
-                                if (data.success) {
-                                  setYoutubeChannelId('');
-                                  setYoutubeChannel(null);
-                                  setDisconnectApproved(false);
-                                  toast({ title: 'Disconnected', description: 'Your YouTube channel has been disconnected.' });
-                                  if (dashboardRefresh) await dashboardRefresh();
-                                } else {
-                                  toast({ title: 'Error', description: data.error || 'Failed to disconnect', variant: 'destructive' });
-                                }
-                              } catch (err) {
-                                toast({ title: 'Error', description: 'Failed to disconnect', variant: 'destructive' });
-                              } finally {
-                                setDisconnecting(false);
-                              }
-                            }}
-                          >
-                            {disconnecting ? 'Disconnecting...' : 'Disconnect'}
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => setShowDisconnectInfo(false)}>OK</Button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="font-semibold text-blue-800 mb-1">Channel disconnection is restricted</div>
-                        <div className="text-blue-700 text-sm mb-2" style={{whiteSpace: 'normal'}}>
-                          For your security, direct channel disconnection is disabled to prevent unauthorized or accidental removal of your YouTube channel. <br />
-                          If you wish to disconnect, please submit a request to the admin via the Feedback section.
-                        </div>
-                        <div className="flex justify-end">
-                          <Button size="sm" variant="outline" onClick={() => setShowDisconnectInfo(false)}>OK</Button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+
 
           {/* Divider before Danger Zone */}
           <div className="col-span-2 my-2">
             <div className="border-t border-destructive/30 w-full" />
           </div>
           {/* Danger Zone Section - full width */}
-          <div className="col-span-2 bg-card/80 backdrop-blur border border-destructive/60 shadow-xl rounded-2xl p-8 animate-slide-in-up relative overflow-hidden mt-2">
+          <div className="col-span-2 bg-card/80 backdrop-blur border border-destructive/60 shadow-xl rounded-2xl p-4 sm:p-8 animate-slide-in-up relative overflow-hidden mt-2">
             <div className="absolute left-0 top-6 h-8 w-1 bg-destructive rounded-r-full" />
-            <h2 className="text-xl font-bold mb-6 pl-4 flex items-center gap-2 text-destructive"><Trash2 className="w-5 h-5" /> Danger Zone</h2>
-            <div className="flex flex-col gap-8">
+            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 pl-4 flex items-center gap-2 text-destructive"><Trash2 className="w-5 h-5" /> Danger Zone</h2>
+            <div className="flex flex-col gap-6 sm:gap-8">
               <Button
                 variant="outline"
-                className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2"
+                className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2 text-sm sm:text-base"
                 disabled={dangerLoading.export}
                 onClick={async () => {
                   setDangerLoading(l => ({ ...l, export: true }));
@@ -853,7 +771,7 @@ export default function SettingsPage() {
               </Button>
               <Button
                 variant="outline"
-                className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2"
+                className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2 text-sm sm:text-base"
                 disabled={dangerLoading.reset}
                 onClick={async () => {
                   setDangerLoading(l => ({ ...l, reset: true }));
@@ -876,7 +794,7 @@ export default function SettingsPage() {
               </Button>
               <Button
                 variant="destructive"
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 text-sm sm:text-base"
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={dangerLoading.delete}
               >
@@ -884,9 +802,9 @@ export default function SettingsPage() {
               </Button>
               {showDeleteConfirm && (
                 <div className="mt-4 p-4 bg-destructive/10 border border-destructive rounded-lg">
-                  <p className="mb-2 text-destructive font-semibold">Are you sure you want to delete your account? This action cannot be undone.</p>
+                  <p className="mb-2 text-destructive font-semibold text-sm sm:text-base">Are you sure you want to delete your account? This action cannot be undone.</p>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={dangerLoading.delete}>Cancel</Button>
+                    <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={dangerLoading.delete} className="text-sm sm:text-base">Cancel</Button>
                     <Button
                       variant="destructive"
                       disabled={dangerLoading.delete}
@@ -912,6 +830,7 @@ export default function SettingsPage() {
                           setDangerLoading(l => ({ ...l, delete: false }));
                         }
                       }}
+                      className="text-sm sm:text-base"
                     >
                       {dangerLoading.delete ? 'Deleting...' : 'Yes, Delete Permanently'}
                     </Button>

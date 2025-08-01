@@ -3,7 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import Platform from '@/models/Platform';
 import { verifyToken } from '@/lib/auth-utils';
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     await dbConnect();
     
@@ -19,31 +19,22 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    // Get all platforms for user, excluding Instagram since it's coming soon
-    const platforms = await Platform.find({ 
+    // Remove any existing Instagram connections for this user
+    const result = await Platform.deleteMany({ 
       userId: payload.email,
-      platform: { $ne: 'instagram' } // Exclude Instagram
-    }).lean();
+      platform: 'instagram'
+    });
     
-    // Determine active platform
-    const activePlatform = platforms.find(p => p.status === 'connected');
-    
-    const result = {
-      activePlatform: activePlatform?.platform || null,
-      platforms: platforms.map(p => ({
-        platform: p.platform,
-        status: p.status,
-        connectedAt: p.connectedAt,
-        data: p.data
-      }))
-    };
-
-    return NextResponse.json({ success: true, data: result });
+    return NextResponse.json({ 
+      success: true, 
+      message: `Removed ${result.deletedCount} Instagram connections`,
+      deletedCount: result.deletedCount
+    });
 
   } catch (error) {
-    console.error('Error fetching platform status:', error);
+    console.error('Error cleaning up Instagram connections:', error);
     return NextResponse.json({ 
-      error: 'Failed to fetch platform status' 
+      error: 'Failed to cleanup Instagram connections' 
     }, { status: 500 });
   }
 } 

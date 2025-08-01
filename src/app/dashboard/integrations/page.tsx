@@ -17,9 +17,14 @@ import {
   Clock, 
   AlertTriangle,
   ExternalLink,
-  Settings
+  Settings,
+  Hand,
+  MessageCircle,
+  Sparkles,
+  Info
 } from 'lucide-react';
 import { formatNumber } from '@/lib/auth-utils';
+import { useRouter } from 'next/navigation';
 
 interface PlatformData {
   platform: string;
@@ -39,12 +44,15 @@ export default function IntegrationsPage() {
   const [connecting, setConnecting] = useState(false);
   const [accountId, setAccountId] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('');
-  const [disableReason, setDisableReason] = useState('');
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [showDisableDialog, setShowDisableDialog] = useState(false);
+  const [showComingSoonDialog, setShowComingSoonDialog] = useState(false);
+  const [showHandPointer, setShowHandPointer] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     fetchPlatformStatus();
+    cleanupInstagramConnections();
     
     // Handle OAuth callback results
     const urlParams = new URLSearchParams(window.location.search);
@@ -89,6 +97,22 @@ export default function IntegrationsPage() {
     }
   }, []);
 
+  const cleanupInstagramConnections = async () => {
+    try {
+      const token = localStorage.getItem('creator_jwt');
+      if (!token) return;
+
+      await fetch('/api/platform/cleanup-instagram', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (error) {
+      console.error('Error cleaning up Instagram connections:', error);
+    }
+  };
+
   const fetchPlatformStatus = async () => {
     try {
       const token = localStorage.getItem('creator_jwt');
@@ -102,6 +126,14 @@ export default function IntegrationsPage() {
 
       if (response.ok) {
         const data = await response.json();
+        // Filter out Instagram from connected platforms since it's coming soon
+        if (data.data && data.data.platforms) {
+          data.data.platforms = data.data.platforms.filter((platform: any) => platform.platform !== 'instagram');
+          // Update active platform if it was Instagram
+          if (data.data.activePlatform === 'instagram') {
+            data.data.activePlatform = data.data.platforms.find((p: any) => p.status === 'connected')?.platform || null;
+          }
+        }
         setPlatformStatus(data.data);
       }
     } catch (error) {
@@ -112,81 +144,14 @@ export default function IntegrationsPage() {
   };
 
   const connectPlatform = async () => {
+    if (!accountId.trim() && selectedPlatform !== 'instagram') return;
+
     setConnecting(true);
-    try {
-      if (selectedPlatform === 'instagram') {
-        // For Instagram, use mock data with random account ID
-        const randomAccountId = 'test_instagram_' + Math.random().toString(36).substring(7);
-        
-        const token = localStorage.getItem('creator_jwt');
-        if (!token) return;
-
-        const response = await fetch('/api/platform/connect', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            platform: selectedPlatform,
-            accountId: randomAccountId
-          })
-        });
-
-        if (response.ok) {
-          await fetchPlatformStatus();
-          setShowConnectDialog(false);
-          setSelectedPlatform('');
-          alert('Instagram connected successfully with mock data!');
-        } else {
-          const error = await response.json();
-          alert(error.error || 'Failed to connect Instagram');
-        }
-      } else {
-        // For YouTube, use manual account ID
-        if (!accountId.trim()) return;
-
-        const token = localStorage.getItem('creator_jwt');
-        if (!token) return;
-
-        const response = await fetch('/api/platform/connect', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            platform: selectedPlatform,
-            accountId: accountId.trim()
-          })
-        });
-
-        if (response.ok) {
-          await fetchPlatformStatus();
-          setShowConnectDialog(false);
-          setAccountId('');
-          setSelectedPlatform('');
-        } else {
-          const error = await response.json();
-          alert(error.error || 'Failed to connect platform');
-        }
-      }
-    } catch (error) {
-      console.error('Error connecting platform:', error);
-      alert('Failed to connect platform');
-    } finally {
-      setConnecting(false);
-    }
-  };
-
-  const requestDisable = async () => {
-    if (!disableReason.trim()) return;
-
     try {
       const token = localStorage.getItem('creator_jwt');
       if (!token) return;
 
-      const response = await fetch('/api/platform/disable-request', {
+      const response = await fetch('/api/platform/connect', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -194,25 +159,29 @@ export default function IntegrationsPage() {
         },
         body: JSON.stringify({
           platform: selectedPlatform,
-          reason: disableReason.trim()
+          accountId: accountId.trim()
         })
       });
 
       if (response.ok) {
         await fetchPlatformStatus();
-        setShowDisableDialog(false);
-        setDisableReason('');
+        setShowConnectDialog(false);
+        setAccountId('');
         setSelectedPlatform('');
-        alert('Disable request submitted successfully. Waiting for admin approval.');
+        alert(`${getPlatformName(selectedPlatform)} connected successfully!`);
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to submit disable request');
+        alert(error.error || `Failed to connect ${getPlatformName(selectedPlatform)}`);
       }
     } catch (error) {
-      console.error('Error requesting disable:', error);
-      alert('Failed to submit disable request');
+      console.error('Error connecting platform:', error);
+      alert(`Failed to connect ${getPlatformName(selectedPlatform)}`);
+    } finally {
+      setConnecting(false);
     }
   };
+
+
 
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
@@ -253,29 +222,6 @@ export default function IntegrationsPage() {
     }
   };
 
-  const getPlatformData = (platform: string, data: any) => {
-    if (!data) return null;
-
-    switch (platform) {
-      case 'youtube':
-        return {
-          primary: data.subscribers ? formatNumber(data.subscribers) : 'N/A',
-          secondary: data.views ? formatNumber(data.views) : 'N/A',
-          primaryLabel: 'Subscribers',
-          secondaryLabel: 'Views'
-        };
-      case 'instagram':
-        return {
-          primary: data.followers ? formatNumber(data.followers) : 'N/A',
-          secondary: data.posts ? formatNumber(data.posts) : 'N/A',
-          primaryLabel: 'Followers',
-          secondaryLabel: 'Posts'
-        };
-      default:
-        return null;
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -288,26 +234,43 @@ export default function IntegrationsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Hand Pointer UI Indicator */}
+      {showHandPointer && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 sm:p-6 shadow-xl max-w-sm animate-bounce mx-4">
+            <div className="flex flex-col items-center">
+              <Hand className="w-12 h-12 text-blue-500 mb-4" />
+              <p className="text-center font-medium text-gray-700 dark:text-gray-300 text-sm sm:text-base">
+                👆 Click on "Feedback & Support" in the sidebar to submit your disconnect request!
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
+                Redirecting in 5 seconds...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">Platform Integrations</h1>
-          <p className="text-gray-400">Connect your social media platforms to start monitoring your content for copyright violations</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">Platform Integrations</h1>
+          <p className="text-gray-400 text-sm sm:text-base">Connect your social media platforms to start monitoring your content for copyright violations</p>
         </div>
       </div>
 
       {/* Platform Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {/* YouTube */}
         <Card className="bg-white/5 border-gray-600/30 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <CardHeader>
+          <CardHeader className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 {getPlatformIcon('youtube')}
                 <div>
-                  <CardTitle className="text-white">YouTube</CardTitle>
-                  <CardDescription className="text-gray-400">
+                  <CardTitle className="text-white text-sm sm:text-base">YouTube</CardTitle>
+                  <CardDescription className="text-gray-400 text-xs sm:text-sm">
                     Connect your YouTube channel
                   </CardDescription>
                 </div>
@@ -315,47 +278,15 @@ export default function IntegrationsPage() {
               {getStatusBadge(platformStatus?.platforms.find(p => p.platform === 'youtube')?.status || 'disabled')}
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
             {platformStatus?.platforms.find(p => p.platform === 'youtube')?.status === 'connected' ? (
-              <div className="space-y-4">
-                {(() => {
-                  const data = getPlatformData('youtube', platformStatus.platforms.find(p => p.platform === 'youtube')?.data);
-                  return data ? (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-2xl font-bold text-white">{data.primary}</div>
-                        <div className="text-sm text-gray-400">{data.primaryLabel}</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-white">{data.secondary}</div>
-                        <div className="text-sm text-gray-400">{data.secondaryLabel}</div>
-                      </div>
-                    </div>
-                  ) : null;
-                })()}
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setSelectedPlatform('youtube');
-                      setShowDisableDialog(true);
-                    }}
-                  >
-                    Request Disable
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    View Analytics
-                  </Button>
-                </div>
+              <div className="text-center py-4">
+                <div className="text-green-400 font-medium">Connected</div>
               </div>
             ) : (
               <div className="text-center py-4">
-                <div className="text-gray-400 mb-4">
-                  Connect your YouTube channel to track analytics
-                </div>
                 <Button 
-                  className="bg-red-600 hover:bg-red-700"
+                  className="bg-red-600 hover:bg-red-700 text-sm sm:text-base"
                   onClick={() => {
                     setSelectedPlatform('youtube');
                     setShowConnectDialog(true);
@@ -371,103 +302,122 @@ export default function IntegrationsPage() {
 
         {/* Instagram */}
         <Card className="bg-white/5 border-gray-600/30 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <CardHeader>
+          <CardHeader className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 {getPlatformIcon('instagram')}
                 <div>
-                  <CardTitle className="text-white">Instagram</CardTitle>
-                  <CardDescription className="text-gray-400">
-                    Connect your Instagram account (Mock data for testing)
+                  <CardTitle className="text-white text-sm sm:text-base">Instagram</CardTitle>
+                  <CardDescription className="text-gray-400 text-xs sm:text-sm">
+                    Connect your Instagram account
                   </CardDescription>
                 </div>
               </div>
-              {getStatusBadge(platformStatus?.platforms.find(p => p.platform === 'instagram')?.status || 'disabled')}
+              <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                Coming Soon
+              </Badge>
             </div>
           </CardHeader>
-          <CardContent>
-            {platformStatus?.platforms.find(p => p.platform === 'instagram')?.status === 'connected' ? (
-              <div className="space-y-4">
-                {(() => {
-                  const data = getPlatformData('instagram', platformStatus.platforms.find(p => p.platform === 'instagram')?.data);
-                  return data ? (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-2xl font-bold text-white">{data.primary}</div>
-                        <div className="text-sm text-gray-400">{data.primaryLabel}</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-white">{data.secondary}</div>
-                        <div className="text-sm text-gray-400">{data.secondaryLabel}</div>
-                      </div>
-                    </div>
-                  ) : null;
-                })()}
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      setSelectedPlatform('instagram');
-                      setShowDisableDialog(true);
-                    }}
-                  >
-                    Request Disable
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    View Analytics
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-4">
-                <div className="text-gray-400 mb-4">
-                  Connect your Instagram account to track analytics
-                </div>
-                <Button 
-                  className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600"
-                  onClick={() => {
-                    setSelectedPlatform('instagram');
-                    setShowConnectDialog(true);
-                  }}
-                >
-                  <Instagram className="w-4 h-4 mr-2" />
-                  Connect Instagram
-                </Button>
-              </div>
-            )}
+          <CardContent className="p-4 sm:p-6">
+            <div className="text-center py-4">
+              <div className="text-gray-400 text-sm sm:text-base">Coming Soon</div>
+            </div>
           </CardContent>
         </Card>
 
         {/* TikTok */}
         <Card className="bg-white/5 border-gray-600/30 shadow-lg hover:shadow-xl transition-shadow duration-300">
-          <CardHeader>
+          <CardHeader className="p-4 sm:p-6">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 {getPlatformIcon('tiktok')}
                 <div>
-                  <CardTitle className="text-white">TikTok</CardTitle>
-                  <CardDescription className="text-gray-400">
+                  <CardTitle className="text-white text-sm sm:text-base">TikTok</CardTitle>
+                  <CardDescription className="text-gray-400 text-xs sm:text-sm">
                     Connect your TikTok account
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="outline">Coming Soon</Badge>
+              <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                Coming Soon
+              </Badge>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 sm:p-6">
             <div className="text-center py-4">
-              <div className="text-gray-400 mb-4">
-                TikTok integration coming soon
-              </div>
-              <Button variant="outline" disabled>
-                <Music className="w-4 h-4 mr-2" />
-                Coming Soon
-              </Button>
+              <div className="text-gray-400 text-sm sm:text-base">Coming Soon</div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Connected Platforms Info */}
+      {platformStatus?.platforms.some(p => p.status === 'connected') && (
+        <Card className="bg-blue-500/5 border-blue-500/30">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-blue-400 flex items-center gap-2 text-sm sm:text-base">
+              <CheckCircle className="w-5 h-5" />
+              Connected Platforms
+            </CardTitle>
+            <CardDescription className="text-blue-300 text-xs sm:text-sm">
+              Manage your connected platforms and disconnect requests
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 sm:p-6">
+            <div className="space-y-4">
+              {platformStatus.platforms.filter(p => p.status === 'connected').map((platform) => (
+                <div key={platform.platform} className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    {getPlatformIcon(platform.platform)}
+                    <div>
+                      <div className="font-medium text-white text-sm sm:text-base">{getPlatformName(platform.platform)}</div>
+                      <div className="text-sm text-blue-300 text-xs sm:text-sm">Connected</div>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="border-red-500 text-red-400 hover:bg-red-500/10 text-xs sm:text-sm"
+                    onClick={() => {
+                      setSelectedPlatform(platform.platform);
+                      setShowDisableDialog(true);
+                    }}
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              ))}
+              
+              {/* Disconnect Process Steps */}
+              <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
+                <h4 className="font-medium text-white mb-3 text-sm sm:text-base">How to Disconnect a Platform:</h4>
+                <div className="space-y-2 text-sm text-gray-300 text-xs sm:text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">1</div>
+                    <span>Click "Disconnect" on the platform you want to remove</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">2</div>
+                    <span>You'll see a message explaining the restriction</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">3</div>
+                    <span>You'll be redirected to the Feedback page</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">4</div>
+                    <span>Submit your disconnect request with a reason</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">5</div>
+                    <span>Wait for admin approval (usually 24-48 hours)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Connect Platform Dialog */}
       <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
@@ -481,29 +431,18 @@ export default function IntegrationsPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {selectedPlatform === 'instagram' ? (
-              <div className="text-center py-4">
-                <div className="text-gray-400 mb-4">
-                  Click "Connect Instagram" to connect with mock data for testing purposes.
-                </div>
-                <div className="text-sm text-gray-500">
-                  This will generate random Instagram statistics for testing the dashboard.
-                </div>
-              </div>
-            ) : (
-              <div>
-                <Label htmlFor="accountId" className="text-white">
-                  {selectedPlatform === 'youtube' ? 'Channel ID' : 'Account ID'}
-                </Label>
-                <Input
-                  id="accountId"
-                  value={accountId}
-                  onChange={(e) => setAccountId(e.target.value)}
-                  placeholder={selectedPlatform === 'youtube' ? 'Enter YouTube Channel ID' : 'Enter Account ID'}
-                  className="bg-gray-800 border-gray-600 text-white"
-                />
-              </div>
-            )}
+            <div>
+              <Label htmlFor="accountId" className="text-white">
+                {selectedPlatform === 'youtube' ? 'Channel ID' : 'Account ID'}
+              </Label>
+              <Input
+                id="accountId"
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                placeholder={selectedPlatform === 'youtube' ? 'Enter YouTube Channel ID' : 'Enter Account ID'}
+                className="bg-gray-800 border-gray-600 text-white"
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowConnectDialog(false)}>
@@ -511,8 +450,8 @@ export default function IntegrationsPage() {
             </Button>
             <Button 
               onClick={connectPlatform}
-              disabled={connecting || (selectedPlatform !== 'instagram' && !accountId.trim())}
-              className={selectedPlatform === 'youtube' ? 'bg-red-600 hover:bg-red-700' : 'bg-gradient-to-r from-pink-500 to-purple-500'}
+              disabled={connecting || !accountId.trim()}
+              className="bg-red-600 hover:bg-red-700"
             >
               {connecting ? 'Connecting...' : `Connect ${getPlatformName(selectedPlatform)}`}
             </Button>
@@ -526,23 +465,26 @@ export default function IntegrationsPage() {
           <DialogHeader>
             <DialogTitle className="text-white flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-yellow-500" />
-              Request Platform Disable
+              Platform Disconnection Restricted
             </DialogTitle>
             <DialogDescription className="text-gray-400">
-              Disabling {getPlatformName(selectedPlatform)} requires admin approval. Please provide a reason.
+              For your security, direct platform disconnection is disabled.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="reason" className="text-white">Reason for Disable</Label>
-              <Textarea
-                id="reason"
-                value={disableReason}
-                onChange={(e) => setDisableReason(e.target.value)}
-                placeholder="Please explain why you want to disable this platform..."
-                className="bg-gray-800 border-gray-600 text-white"
-                rows={4}
-              />
+            <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+              <div className="flex items-start gap-3">
+                <Info className="w-6 h-6 text-blue-400 mt-1 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="font-semibold text-blue-300 mb-2">Channel disconnection is restricted</div>
+                  <div className="text-blue-200 text-sm mb-3">
+                    For your security, direct channel disconnection is disabled to prevent unauthorized or accidental removal of your {getPlatformName(selectedPlatform)} channel.
+                  </div>
+                  <div className="text-blue-200 text-sm">
+                    If you wish to disconnect, please submit a request to the admin via the Feedback section.
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -550,11 +492,57 @@ export default function IntegrationsPage() {
               Cancel
             </Button>
             <Button 
-              variant="destructive"
-              onClick={requestDisable}
-              disabled={!disableReason.trim()}
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                setShowDisableDialog(false);
+                router.push('/dashboard/feedback?from=integrations');
+              }}
             >
-              Submit Request
+              Go to Feedback
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Coming Soon Dialog */}
+      <Dialog open={showComingSoonDialog} onOpenChange={setShowComingSoonDialog}>
+        <DialogContent className="bg-gray-900 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-yellow-500" />
+              Coming Soon!
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              We're working hard to bring you amazing new features!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-center py-4">
+              <div className="text-yellow-400 font-medium mb-2">🚀 Future Features</div>
+              <div className="text-sm text-gray-400 space-y-2">
+                <p>• Instagram integration for content monitoring</p>
+                <p>• TikTok platform support</p>
+                <p>• Advanced analytics and insights</p>
+                <p>• Multi-platform dashboard</p>
+                <p>• Enhanced copyright detection</p>
+              </div>
+            </div>
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-blue-400">
+                <MessageCircle className="w-4 h-4" />
+                <span className="text-sm font-medium">Stay Connected!</span>
+              </div>
+              <p className="text-xs text-blue-300 mt-1">
+                We'll notify you as soon as these features are available. Keep an eye on your dashboard for updates!
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={() => setShowComingSoonDialog(false)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Got it! 👍
             </Button>
           </DialogFooter>
         </DialogContent>

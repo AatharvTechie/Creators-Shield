@@ -5,6 +5,7 @@ import { useDashboardData } from '../dashboard-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AdvancedLoader } from '@/components/ui/advanced-loader';
 import { Progress } from '@/components/ui/progress';
 import { 
   Shield, 
@@ -25,7 +26,6 @@ import {
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { formatNumber } from '@/lib/auth-utils';
-import { AutoConnectLoader } from '@/components/ui/loader';
 
 interface YouTubeData {
   subscribers: number;
@@ -37,7 +37,7 @@ interface YouTubeData {
 }
 
 export default function OverviewPage() {
-  const { user, usageStats, planFeatures, platformStatus, autoConnecting, loading: dashboardLoading } = useDashboardData();
+  const { user, usageStats, planFeatures, platformStatus } = useDashboardData();
   const [youtubeData, setYoutubeData] = useState<YouTubeData | null>(null);
   const [loading, setLoading] = useState(false);
   
@@ -79,23 +79,6 @@ export default function OverviewPage() {
 
     fetchYouTubeData();
   }, [hasYouTubeChannel, user?.email, user?.youtubeChannel?.id, user?.youtubeChannelId]);
-
-  // Show auto-connect loader when connecting channels
-  if (autoConnecting) {
-    return <AutoConnectLoader message="Connecting your YouTube channel..." />;
-  }
-
-  // Show loading state when dashboard is loading
-  if (dashboardLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
   
   if (!user) {
     return (
@@ -103,10 +86,10 @@ export default function OverviewPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-500">Loading dashboard...</p>
+            </div>
         </div>
-      </div>
     );
-  }
+}
 
   const userPlan = user.plan || 'free';
   const limits = planFeatures.checkUsageLimits();
@@ -114,16 +97,16 @@ export default function OverviewPage() {
 
   // Calculate usage percentages
   const youtubeChannelUsage = planFeatures.isUnlimited('maxYouTubeChannels') ? 0 : 
-    (usageStats.youtubeChannels / (typeof planFeatures.getFeatureLimit('maxYouTubeChannels') === 'number' ? planFeatures.getFeatureLimit('maxYouTubeChannels') : 1)) * 100;
+    (usageStats.youtubeChannels / planFeatures.getFeatureLimit('maxYouTubeChannels')) * 100;
   
-  const videoMonitoringUsage = planFeatures.isUnlimited('maxVideoMonitoring') ? 0 : 
-    (usageStats.videosMonitored / (typeof planFeatures.getFeatureLimit('maxVideoMonitoring') === 'number' ? planFeatures.getFeatureLimit('maxVideoMonitoring') : 1)) * 100;
+  const videoUsage = planFeatures.isUnlimited('maxVideosToMonitor') ? 0 : 
+    (usageStats.videosMonitored / planFeatures.getFeatureLimit('maxVideosToMonitor')) * 100;
   
-  const violationDetectionUsage = planFeatures.isUnlimited('maxViolationDetection') ? 0 : 
-    (usageStats.violationDetections / (typeof planFeatures.getFeatureLimit('maxViolationDetection') === 'number' ? planFeatures.getFeatureLimit('maxViolationDetection') : 1)) * 100;
+  const violationUsage = planFeatures.isUnlimited('maxViolationDetections') ? 0 : 
+    (usageStats.violationDetections / planFeatures.getFeatureLimit('maxViolationDetections')) * 100;
   
-  const dmcaRequestsUsage = planFeatures.isUnlimited('maxDmcaRequests') ? 0 : 
-    (usageStats.dmcaRequests / (typeof planFeatures.getFeatureLimit('maxDmcaRequests') === 'number' ? planFeatures.getFeatureLimit('maxDmcaRequests') : 1)) * 100;
+  const dmcaUsage = planFeatures.isUnlimited('maxDmcaRequests') ? 0 : 
+    (usageStats.dmcaRequests / planFeatures.getFeatureLimit('maxDmcaRequests')) * 100;
 
     return (
     <div className="space-y-6">
@@ -233,23 +216,31 @@ export default function OverviewPage() {
             <CardContent>
               <div className="text-lg font-bold text-white truncate">
                 {loading ? (
-                  <div className="animate-pulse bg-gray-600 h-6 w-32 rounded"></div>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-4 h-4">
+                      <AdvancedLoader size="sm" variant="dots" color="primary" />
+                    </div>
+                    <div className="animate-pulse bg-gray-600 h-6 w-24 rounded"></div>
+                  </div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   youtubeData.mostViewedVideo.title : 
                   activePlatform === 'instagram' ? 'Instagram Post' :
                   'N/A'
                 }
               </div>
-              <p className="text-xs text-gray-400">
+              <div className="text-xs text-gray-400">
                 {loading ? (
-                  <div className="animate-pulse bg-gray-600 h-3 w-16 rounded mt-1"></div>
+                  <div className="flex items-center space-x-1">
+                    <AdvancedLoader size="sm" variant="wave" color="secondary" />
+                    <div className="animate-pulse bg-gray-600 h-3 w-12 rounded"></div>
+                  </div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   `${formatNumber(youtubeData.mostViewedVideo.views)} views` : 
                   activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.totalLikes ?
                   `${formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.totalLikes)} likes` :
                   'No data'
                 }
-              </p>
+              </div>
             </CardContent>
           </Card>
         </div>

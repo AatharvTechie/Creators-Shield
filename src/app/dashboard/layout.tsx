@@ -74,8 +74,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <CreatorSidebar />
         <SidebarInset>
             <DashboardHeader title="Creator Dashboard" />
-            <main className="p-4 md:p-6 flex-1 flex flex-col">
-                {children}
+            <main className="p-2 sm:p-4 md:p-6 flex-1 flex flex-col min-h-screen">
+                <div className="w-full max-w-7xl mx-auto">
+                    {children}
+                </div>
             </main>
         </SidebarInset>
         <SuspensionOverlay />
