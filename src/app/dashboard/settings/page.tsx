@@ -20,7 +20,17 @@ import { InteractiveLoader } from '@/components/ui/loader';
 
 type MostViewedVideo = { id: string; title: string; thumbnail: string; url: string; viewCount: string };
 type YoutubeChannel = { id: string; title: string; thumbnail: string; url: string; subscriberCount?: string; viewCount?: string; mostViewedVideo?: MostViewedVideo | null };
-type Device = { id: string; device: string; userAgent: string; createdAt: string; lastActive: string };
+type Device = { 
+  id: string; 
+  device: string; 
+  browser: string;
+  os: string;
+  ipAddress: string;
+  userAgent: string; 
+  createdAt: string; 
+  lastActive: string;
+  isCurrentSession: boolean;
+};
 
 export default function SettingsPage() {
   const [theme, setTheme] = useState('system');
@@ -93,11 +103,46 @@ export default function SettingsPage() {
   const [subscription, setSubscription] = useState({
     plan: user?.plan || 'free',
     status: 'active',
-    nextBillingDate: user?.planExpiry ? new Date(user.planExpiry).toLocaleDateString() : 'N/A',
+    nextBillingDate: (() => {
+      if (!user?.planExpiry || user?.plan === 'free') return 'N/A';
+      const expiryDate = new Date(user.planExpiry);
+      const now = new Date();
+      if (expiryDate <= now) return 'Expired';
+      
+      // Calculate next billing date based on plan type
+      if (user.plan === 'monthly') {
+        const nextDate = new Date(expiryDate);
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        return nextDate.toLocaleDateString();
+      } else if (user.plan === 'yearly') {
+        const nextDate = new Date(expiryDate);
+        nextDate.setFullYear(nextDate.getFullYear() + 1);
+        return nextDate.toLocaleDateString();
+      }
+      return expiryDate.toLocaleDateString();
+    })(),
     amount: user?.plan === 'free' ? '$0.00' : user?.plan === 'monthly' ? '$9.99' : user?.plan === 'yearly' ? '$99.99' : '$0.00'
   });
+  
+  // Calculate purchase date and create invoice history
+  const purchaseDate = user?.planExpiry ? (() => {
+    const expiryDate = new Date(user.planExpiry);
+    if (user.plan === 'monthly') {
+      expiryDate.setMonth(expiryDate.getMonth() - 1);
+    } else if (user.plan === 'yearly') {
+      expiryDate.setFullYear(expiryDate.getFullYear() - 1);
+    }
+    return expiryDate.toLocaleDateString();
+  })() : 'N/A';
+  
   const [invoices, setInvoices] = useState([
-    { id: '1', date: user?.planExpiry ? new Date(user.planExpiry).toLocaleDateString() : 'N/A', amount: user?.plan === 'free' ? '$0.00' : user?.plan === 'monthly' ? '$9.99' : user?.plan === 'yearly' ? '$99.99' : '$0.00', status: 'paid' }
+    { 
+      id: '1', 
+      date: purchaseDate, 
+      amount: user?.plan === 'free' ? '$0.00' : user?.plan === 'monthly' ? '$9.99' : user?.plan === 'yearly' ? '$99.99' : '$0.00', 
+      status: 'paid',
+      description: user?.plan === 'free' ? 'Free Plan' : `${(user?.plan || '').charAt(0).toUpperCase() + (user?.plan || '').slice(1)} Plan Purchase`
+    }
   ]);
 
   // Sync YouTube channel state with dashboardData.user
@@ -142,8 +187,8 @@ export default function SettingsPage() {
       })
         .then(res => res.json())
         .then(data => {
-          if (data.success) {
-            setDevices(data.devices || []);
+          if (data.devices) {
+          setDevices(data.devices || []);
           } else {
             setDevicesError(data.error || 'Failed to load devices');
           }
@@ -205,20 +250,20 @@ export default function SettingsPage() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg sm:text-xl font-bold text-primary">{profileName}</span>
+              <span className="text-lg sm:text-xl font-bold text-primary">{profileName}</span>
                 {youtubeChannel && (
                   <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400 font-semibold border border-green-500/30">
                     YouTube Connected
                   </span>
                 )}
-              </div>
+            </div>
               <div className="text-muted-foreground text-sm flex items-center gap-2">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 {email}
-              </div>
-            </div>
+          </div>
+        </div>
           </div>
         </div>
         {/* Optimized grid layout */}
@@ -313,23 +358,23 @@ export default function SettingsPage() {
                       <div className="flex-1 flex flex-col items-center">
                         <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300 ${verificationStep==='email' ? 'border-primary bg-primary/20 text-primary shadow-lg' : 'border-border bg-muted text-muted-foreground'}`}>
                           <span className="text-sm font-medium">1</span>
-                        </div>
+                      </div>
                         <span className="text-xs mt-2 font-medium">Email</span>
                       </div>
                       <div className={`flex-1 h-1 mx-2 transition-all duration-300 ${verificationStep==='otp' || verificationStep==='reset' ? 'bg-primary' : 'bg-border'}`} />
                       <div className="flex-1 flex flex-col items-center">
                         <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300 ${verificationStep==='otp' || verificationStep==='reset' ? 'border-primary bg-primary/20 text-primary shadow-lg' : 'border-border bg-muted text-muted-foreground'}`}>
                           <span className="text-sm font-medium">2</span>
-                        </div>
+                      </div>
                         <span className="text-xs mt-2 font-medium">OTP</span>
                       </div>
                       <div className={`flex-1 h-1 mx-2 transition-all duration-300 ${verificationStep==='reset' ? 'bg-primary' : 'bg-border'}`} />
                       <div className="flex-1 flex flex-col items-center">
                         <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300 ${verificationStep==='reset' ? 'border-primary bg-primary/20 text-primary shadow-lg' : 'border-border bg-muted text-muted-foreground'}`}>
                           <span className="text-sm font-medium">3</span>
-                        </div>
-                        <span className="text-xs mt-2 font-medium">New Password</span>
                       </div>
+                        <span className="text-xs mt-2 font-medium">New Password</span>
+                    </div>
                     </div>
                     <DialogHeader className="px-6 sm:px-8 pt-4 pb-2">
                       <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl font-bold">
@@ -775,12 +820,12 @@ export default function SettingsPage() {
               Active Devices
             </h2>
             <div className="space-y-3">
-              {devicesLoading ? (
+                {devicesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                   <span className="ml-3 text-muted-foreground">Loading devices...</span>
                 </div>
-              ) : devicesError ? (
+                ) : devicesError ? (
                 <div className="text-center py-8">
                   <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -798,47 +843,72 @@ export default function SettingsPage() {
               ) : (
                 <div className="space-y-2">
                   {devices.map(device => (
-                    <div key={device.id} className="bg-muted/50 border border-border rounded-lg p-3 hover:bg-muted/70 transition-colors duration-200">
+                    <div key={device.id} className={`bg-muted/50 border border-border rounded-lg p-3 hover:bg-muted/70 transition-colors duration-200 ${device.isCurrentSession ? 'ring-2 ring-blue-500/50 bg-blue-500/10' : ''}`}>
                       <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
+                       <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <div className="font-medium text-xs sm:text-sm truncate">{device.device || 'Unknown Device'}</div>
+                            <div className="font-medium text-xs sm:text-sm truncate flex items-center gap-2">
+                              {device.device || 'Unknown Device'}
+                              {device.isCurrentSession && (
+                                <span className="px-1.5 py-0.5 text-xs rounded-full bg-blue-500/20 text-blue-400 font-semibold border border-blue-500/30">
+                                  Current
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Login time: {device.createdAt ? new Date(device.createdAt).toLocaleString() : 'Unknown'}
-                          </div>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span>{device.browser} on {device.os}</span>
+                              {device.ipAddress !== 'Unknown' && (
+                                <span>• IP: {device.ipAddress}</span>
+                              )}
+                            </div>
+                            <div>
+                           Login time: {device.createdAt ? new Date(device.createdAt).toLocaleString() : 'Unknown'}
+                         </div>
+                            <div>
+                           Last active: {device.lastActive ? new Date(device.lastActive).toLocaleString() : 'Unknown'}
+                         </div>
+                       </div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 h-7"
-                          onClick={async () => {
-                            try {
-                              const res = await fetch('/api/settings/devices', {
-                                method: 'DELETE',
-                                headers: { 
-                                  'Content-Type': 'application/json',
-                                  'Authorization': `Bearer ${localStorage.getItem('creator_jwt')}`
-                                },
-                                body: JSON.stringify({ email: user?.email, sessionId: device.id }),
-                              });
-                              const data = await res.json();
-                              if (data.success) {
-                                setDevices(devices.filter(d => d.id !== device.id));
-                                toast({ title: 'Device revoked', description: `Device has been revoked.` });
-                              } else {
-                                toast({ title: 'Error', description: data.error || 'Failed to revoke device', variant: 'destructive' });
-                              }
-                            } catch (error) {
-                              toast({ title: 'Error', description: 'Failed to revoke device', variant: 'destructive' });
-                            }
-                          }}
-                        >
-                          Revoke
-                        </Button>
+                        {!device.isCurrentSession && (
+                       <Button
+                         size="sm"
+                         variant="outline"
+                            className="text-xs border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 h-7"
+                         onClick={async () => {
+                           try {
+                             const res = await fetch('/api/settings/devices', {
+                               method: 'DELETE',
+                                  headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('creator_jwt')}`
+                                  },
+                                  body: JSON.stringify({ email: user?.email, sessionId: device.id }),
+                             });
+                             const data = await res.json();
+                             if (data.success) {
+                               setDevices(devices.filter(d => d.id !== device.id));
+                               toast({ title: 'Device revoked', description: `Device has been revoked.` });
+                             } else {
+                               toast({ title: 'Error', description: data.error || 'Failed to revoke device', variant: 'destructive' });
+                             }
+                           } catch (error) {
+                             toast({ title: 'Error', description: 'Failed to revoke device', variant: 'destructive' });
+                           }
+                         }}
+                       >
+                         Revoke
+                       </Button>
+                        )}
+                        {device.isCurrentSession && (
+                          <div className="text-xs text-blue-400 font-medium">
+                            This device
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -846,8 +916,8 @@ export default function SettingsPage() {
               )}
               <div className="text-xs text-muted-foreground text-center pt-3 border-t border-border">
                 Only real logged-in devices are shown. Devices are tracked when you log in from different browsers or devices.
+                </div>
               </div>
-            </div>
           </div>
 
 
@@ -884,8 +954,8 @@ export default function SettingsPage() {
                       }}
                       className="data-[state=checked]:bg-blue-500"
                     />
-                  </div>
-                </div>
+            </div>
+          </div>
 
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-3 flex-1">
@@ -958,7 +1028,7 @@ export default function SettingsPage() {
                     <div>
                       <div className="font-semibold text-sm">{subscription.plan} Plan</div>
                       <div className="text-xs text-muted-foreground capitalize">{subscription.status}</div>
-                    </div>
+          </div>
                   </div>
                   <div className="text-right">
                     <div className="font-semibold text-sm">{subscription.amount}</div>

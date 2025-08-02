@@ -6,26 +6,13 @@ import Creator from '@/models/Creator';
 import Admin from '@/models/Admin';
 import Session from '@/models/Session';
 import { checkSuspensionStatus, checkDeactivationStatus, checkApprovalStatus } from '@/lib/users-store';
+import { parseUserAgent, getClientIP, generateSessionId } from '@/lib/device-utils';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 const ADMIN_EMAILS = [
   'guddumis003@gmail.com',
   'contactpradeeprajput@gmail.com',
 ];
-
-// Helper function to get device information
-const getDeviceInfo = (userAgent: string) => {
-  if (userAgent.includes('Mobile')) {
-    if (userAgent.includes('Android')) return 'Android Mobile';
-    if (userAgent.includes('iPhone')) return 'iPhone';
-    if (userAgent.includes('iPad')) return 'iPad';
-    return 'Mobile Device';
-  }
-  if (userAgent.includes('Windows')) return 'Windows PC';
-  if (userAgent.includes('Mac')) return 'Mac';
-  if (userAgent.includes('Linux')) return 'Linux PC';
-  return 'Desktop';
-};
 
 export async function POST(req: Request) {
   try {
@@ -130,31 +117,33 @@ export async function POST(req: Request) {
       
       const token = jwt.sign({ id: user._id, email: user.email, name: user.name, role: 'creator', plan: user.plan }, JWT_SECRET, { expiresIn: '7d' });
       
-      // Create session for device tracking
+      // Create session for device tracking with enhanced information
       try {
-        const deviceInfo = getDeviceInfo(userAgent || 'Unknown');
-        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        const deviceInfo = parseUserAgent(userAgent || 'Unknown');
+        const sessionId = generateSessionId();
+        const ipAddress = getClientIP(req);
         
-        await (Session as any).findOneAndUpdate(
-          { 
-            user: user._id,
-            userAgent: userAgent || 'Unknown',
-            device: deviceInfo
-          },
-          {
-            sessionId,
-            device: deviceInfo,
-            userAgent: userAgent || 'Unknown',
-            lastActive: new Date()
-          },
-          {
-            upsert: true,
-            new: true,
-            setDefaultsOnInsert: true
-          }
+        // Mark all existing sessions as not current
+        await (Session as any).updateMany(
+          { user: user._id },
+          { isCurrentSession: false }
         );
         
-        console.log(`Session created for user ${email} on device: ${deviceInfo}`);
+        // Create new session
+        await (Session as any).create({
+          user: user._id,
+          sessionId,
+          device: deviceInfo.device,
+          userAgent: userAgent || 'Unknown',
+          browser: deviceInfo.browser,
+          os: deviceInfo.os,
+          ipAddress,
+          isCurrentSession: true,
+          lastActive: new Date(),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+        });
+        
+        console.log(`Session created for user ${email} on device: ${deviceInfo.device} (${deviceInfo.browser} on ${deviceInfo.os})`);
       } catch (sessionError) {
         console.error('Error creating session:', sessionError);
         // Don't fail login if session creation fails

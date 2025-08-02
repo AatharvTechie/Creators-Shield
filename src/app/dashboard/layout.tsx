@@ -9,11 +9,15 @@ import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { DashboardDataProvider } from './dashboard-context';
 import { SuspensionOverlay } from '@/components/ui/suspension-overlay';
 import { PlanUpgradePopup } from '@/components/ui/plan-upgrade-popup';
+import { useSessionActivity } from '@/hooks/use-session-activity';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPlanPopup, setShowPlanPopup] = useState(false);
+  
+  // Initialize session activity tracking
+  useSessionActivity();
 
   useEffect(() => {
     const checkAuth = async () => {

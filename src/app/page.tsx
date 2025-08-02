@@ -10,12 +10,14 @@ function useScrollFadeIn() {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const observer = new window.IntersectionObserver(
-      ([entry]) => setVisible(entry.isIntersecting),
-      { threshold: 0.2 }
-    );
-    if (ref.current) observer.observe(ref.current);
-    return () => { if (ref.current) observer.unobserve(ref.current); };
+    if (typeof window !== 'undefined') {
+      const observer = new window.IntersectionObserver(
+        ([entry]) => setVisible(entry.isIntersecting),
+        { threshold: 0.2 }
+      );
+      if (ref.current) observer.observe(ref.current);
+      return () => { if (ref.current) observer.unobserve(ref.current); };
+    }
   }, []);
   return [ref, visible] as const;
 }
@@ -51,19 +53,26 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const observer = new window.IntersectionObserver(
-      ([entry]) => setHeroVisible(entry.isIntersecting),
-      { threshold: 0.3 }
-    );
-    if (heroRef.current) observer.observe(heroRef.current);
-    return () => { if (heroRef.current) observer.unobserve(heroRef.current); };
+    if (typeof window !== 'undefined') {
+      const observer = new window.IntersectionObserver(
+        ([entry]) => setHeroVisible(entry.isIntersecting),
+        { threshold: 0.3 }
+      );
+      if (heroRef.current) observer.observe(heroRef.current);
+      return () => { if (heroRef.current) observer.unobserve(heroRef.current); };
+    }
   }, []);
 
   useEffect(() => {
     // Check for JWT or session (customize as per your auth logic)
     if (typeof window !== "undefined") {
-      const token = localStorage.getItem("creator_jwt");
-      setIsLoggedIn(!!token);
+      try {
+        const token = localStorage.getItem("creator_jwt");
+        setIsLoggedIn(!!token);
+      } catch (error) {
+        console.error('Error accessing localStorage:', error);
+        setIsLoggedIn(false);
+      }
     }
   }, []);
 
