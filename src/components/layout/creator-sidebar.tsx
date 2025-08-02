@@ -143,22 +143,32 @@ export function CreatorSidebar() {
   const canAccessYouTubeFeatures = isYouTubeConnected;
   
   return (
-    <Sidebar className="w-full sm:w-56 lg:w-60 xl:w-64">
-      <SidebarHeader className="p-2">
-        <div className="flex items-center gap-2">
-            <NextLink href="/dashboard/settings" className="flex items-center gap-2 min-w-0 group">
-                <Avatar className="h-8 w-8 flex-shrink-0">
-                    <AvatarImage src={avatar} data-ai-hint="profile picture" />
-                    <AvatarFallback className="text-sm">{avatarFallback}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col min-w-0 flex-1 justify-center">
-                    <span className="font-medium text-sidebar-foreground truncate text-sm">{creatorName}</span>
-                </div>
-            </NextLink>
-        </div>
-      </SidebarHeader>
-             <SidebarContent className="sidebar-scrollbar px-2 mt-4">
-         <SidebarMenu className="gap-2">
+         <Sidebar className="w-full sm:w-56 lg:w-60 xl:w-64">
+       <SidebarHeader className="p-4 border-b border-gray-700/50">
+         <div className="flex items-center gap-3">
+             <NextLink href="/dashboard/settings" className="flex items-center gap-3 min-w-0 group hover:bg-sidebar-accent p-2 rounded-lg transition-colors duration-200">
+                 <div className="relative">
+                   <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-primary/20">
+                       <AvatarImage src={avatar} data-ai-hint="profile picture" />
+                       <AvatarFallback className="text-sm font-semibold">{avatarFallback}</AvatarFallback>
+                   </Avatar>
+                   {user?.youtubeChannel && (
+                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background flex items-center justify-center">
+                       <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                       </svg>
+                     </div>
+                   )}
+                 </div>
+                 <div className="flex flex-col min-w-0 flex-1 justify-center">
+                     <span className="font-semibold text-sidebar-foreground truncate text-sm">{creatorName}</span>
+                     <span className="text-xs text-muted-foreground truncate">Creator</span>
+                 </div>
+             </NextLink>
+         </div>
+       </SidebarHeader>
+                           <SidebarContent className="sidebar-scrollbar px-3 mt-6">
+          <SidebarMenu className="gap-3">
           {/* Main Menu Items */}
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -167,13 +177,13 @@ export function CreatorSidebar() {
 
             return (
               <SidebarMenuItem key={item.href}>
-                                 <SidebarMenuButton asChild isActive={isActive} disabled={isDisabled} className="text-xs transition-colors duration-200 hover:bg-sidebar-accent">
-                                      <NextLink href={isDisabled ? '#' : item.href} className="flex items-center gap-2 py-2 px-3 rounded-md">
+                                 <SidebarMenuButton asChild isActive={isActive} disabled={isDisabled} className="text-xs transition-all duration-200 hover:bg-sidebar-accent hover:scale-105">
+                                      <NextLink href={isDisabled ? '#' : item.href} className="flex items-center gap-3 py-3 px-4 rounded-lg">
                                           <Icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate text-sm">{item.label}</span>
-                     {isDisabled && <Lock className="h-2.5 w-2.5 ml-auto text-muted-foreground flex-shrink-0" />}
+                      <span className="truncate text-sm font-medium">{item.label}</span>
+                     {isDisabled && <Lock className="h-3 w-3 ml-auto text-muted-foreground flex-shrink-0" />}
                      {item.href === '/dashboard/feedback' && hasUnread && (
-                       <Badge variant="destructive" className="ml-auto h-1 w-1 rounded-full p-0 flex-shrink-0" />
+                       <Badge variant="destructive" className="ml-auto h-1.5 w-1.5 rounded-full p-0 flex-shrink-0" />
                      )}
                    </NextLink>
                  </SidebarMenuButton>

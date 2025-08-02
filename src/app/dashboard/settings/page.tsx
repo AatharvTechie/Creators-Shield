@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslation } from 'react-i18next';
-import { LogOut, Trash2, Download, RefreshCcw, Info } from 'lucide-react';
+import { LogOut, Trash2, Download, RefreshCcw, Info, Settings, Shield, MessageSquare, Clock, FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
@@ -80,6 +80,25 @@ export default function SettingsPage() {
   const [devicesError, setDevicesError] = useState('');
   const [securityChanged, setSecurityChanged] = useState(false);
   const [securitySaving, setSecuritySaving] = useState(false);
+
+  // Notification Settings state
+  const [notificationSettings, setNotificationSettings] = useState({
+    newCopyrightMatches: true,
+    weeklyReports: true,
+    promotionalEmails: false
+  });
+  const [notificationSaving, setNotificationSaving] = useState(false);
+
+  // Subscription & Billing state
+  const [subscription, setSubscription] = useState({
+    plan: user?.plan || 'free',
+    status: 'active',
+    nextBillingDate: user?.planExpiry ? new Date(user.planExpiry).toLocaleDateString() : 'N/A',
+    amount: user?.plan === 'free' ? '$0.00' : user?.plan === 'monthly' ? '$9.99' : user?.plan === 'yearly' ? '$99.99' : '$0.00'
+  });
+  const [invoices, setInvoices] = useState([
+    { id: '1', date: user?.planExpiry ? new Date(user.planExpiry).toLocaleDateString() : 'N/A', amount: user?.plan === 'free' ? '$0.00' : user?.plan === 'monthly' ? '$9.99' : user?.plan === 'yearly' ? '$99.99' : '$0.00', status: 'paid' }
+  ]);
 
   // Sync YouTube channel state with dashboardData.user
   useEffect(() => {
@@ -169,32 +188,32 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen w-full px-2 md:px-0">
-      <div className="max-w-3xl mx-auto pt-4 sm:pt-8 pb-4">
-        {/* Enhanced Profile summary card */}
-        <div className="flex items-center gap-4 sm:gap-6 bg-gradient-to-r from-card/90 to-card/70 backdrop-blur border border-border/50 shadow-2xl rounded-3xl px-6 sm:px-10 py-6 sm:py-8 mb-8 sm:mb-12 animate-fade-in relative overflow-hidden">
+      <div className="max-w-4xl mx-auto pt-2 sm:pt-4 pb-4">
+        {/* Compact Profile summary card */}
+        <div className="flex items-center gap-3 sm:gap-4 bg-gradient-to-r from-card/90 to-card/70 backdrop-blur border border-border/50 shadow-xl rounded-2xl px-4 sm:px-6 py-4 sm:py-5 mb-4 sm:mb-6 animate-fade-in relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
-          <div className="relative z-10 flex items-center gap-4 sm:gap-6">
+          <div className="relative z-10 flex items-center gap-3 sm:gap-4">
             <div className="relative">
-              <img src={youtubeChannel && youtubeChannel.thumbnail ? youtubeChannel.thumbnail : profileAvatar} alt="Avatar" className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-3 border-primary/40 shadow-lg ring-2 ring-primary/20" />
+              <img src={youtubeChannel && youtubeChannel.thumbnail ? youtubeChannel.thumbnail : profileAvatar} alt="Avatar" className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-primary/40 shadow-lg ring-2 ring-primary/20" />
               {youtubeChannel && (
-                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-background flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-background flex items-center justify-center">
+                  <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
                 </div>
               )}
             </div>
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-1">
-                <span className="text-xl sm:text-2xl font-bold text-primary">{profileName}</span>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg sm:text-xl font-bold text-primary">{profileName}</span>
                 {youtubeChannel && (
-                  <span className="px-3 py-1 text-xs rounded-full bg-green-500/20 text-green-400 font-semibold border border-green-500/30">
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-green-500/20 text-green-400 font-semibold border border-green-500/30">
                     YouTube Connected
                   </span>
                 )}
               </div>
-              <div className="text-muted-foreground text-sm sm:text-base flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <div className="text-muted-foreground text-sm flex items-center gap-2">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 {email}
@@ -202,29 +221,29 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
-        {/* 2-column grid for main settings cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+        {/* Optimized grid layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
           {/* General Section */}
-          <div className="bg-card/80 backdrop-blur border border-primary/30 shadow-xl rounded-2xl p-6 sm:p-8 animate-slide-in-up relative overflow-hidden">
-            <div className="absolute left-0 top-6 h-10 w-1 bg-gradient-to-b from-primary to-primary/60 rounded-r-full" />
-            <h2 className="text-lg sm:text-xl font-bold mb-6 sm:mb-8 pl-6 flex items-center gap-3">
-              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <div className="bg-card/80 backdrop-blur border border-primary/30 shadow-xl rounded-2xl p-4 sm:p-6 animate-slide-in-up relative overflow-hidden">
+            <div className="absolute left-0 top-4 h-8 w-1 bg-gradient-to-b from-primary to-primary/60 rounded-r-full" />
+            <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-5 pl-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               General Settings
             </h2>
-            <div className="flex flex-col gap-4 sm:gap-6">
+            <div className="flex flex-col gap-3 sm:gap-4">
               <div>
-                <label className="block mb-1 font-medium text-sm sm:text-base">{t('Theme')}</label>
-                <div className="flex gap-2 sm:gap-4 flex-wrap">
-                  <Button variant={theme === 'light' ? 'default' : 'outline'} onClick={() => { setTheme('light'); setThemeNext('light'); }} className="text-xs sm:text-sm">{t('Light') || 'Light'}</Button>
-                  <Button variant={theme === 'dark' ? 'default' : 'outline'} onClick={() => { setTheme('dark'); setThemeNext('dark'); }} className="text-xs sm:text-sm">{t('Dark') || 'Dark'}</Button>
-                  <Button variant={theme === 'system' ? 'default' : 'outline'} onClick={() => { setTheme('system'); setThemeNext('system'); }} className="text-xs sm:text-sm">{t('System') || 'System'}</Button>
+                <label className="block mb-2 font-medium text-sm">{t('Theme')}</label>
+                <div className="flex gap-2 flex-wrap">
+                  <Button variant={theme === 'light' ? 'default' : 'outline'} onClick={() => { setTheme('light'); setThemeNext('light'); }} className="text-xs h-8">{t('Light') || 'Light'}</Button>
+                  <Button variant={theme === 'dark' ? 'default' : 'outline'} onClick={() => { setTheme('dark'); setThemeNext('dark'); }} className="text-xs h-8">{t('Dark') || 'Dark'}</Button>
+                  <Button variant={theme === 'system' ? 'default' : 'outline'} onClick={() => { setTheme('system'); setThemeNext('system'); }} className="text-xs h-8">{t('System') || 'System'}</Button>
                 </div>
               </div>
               <Button
-                className="mt-4 text-sm sm:text-base"
+                className="mt-2 text-sm h-9"
                 disabled={!hasChanged || isSaving}
                 onClick={async () => {
                   setIsSaving(true);
@@ -257,36 +276,36 @@ export default function SettingsPage() {
             </div>
           </div>
           {/* Account Section */}
-          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-6 sm:p-8 animate-slide-in-up relative overflow-hidden">
-            <div className="absolute left-0 top-6 h-10 w-1 bg-gradient-to-b from-blue-500 to-blue-400 rounded-r-full" />
-            <h2 className="text-lg sm:text-xl font-bold mb-6 sm:mb-8 pl-6 flex items-center gap-3">
-              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-4 sm:p-6 animate-slide-in-up relative overflow-hidden">
+            <div className="absolute left-0 top-4 h-8 w-1 bg-gradient-to-b from-blue-500 to-blue-400 rounded-r-full" />
+            <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-5 pl-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
               Account Settings
             </h2>
-            <div className="flex flex-col gap-4 sm:gap-6">
+            <div className="flex flex-col gap-3 sm:gap-4">
               <div>
-                <label className="block mb-1 font-medium text-sm sm:text-base">{t('Legal Full Name')}</label>
+                <label className="block mb-2 font-medium text-sm">{t('Legal Full Name')}</label>
                 {accountLoading ? (
-                  <div className="h-10 bg-muted rounded animate-pulse w-full" />
+                  <div className="h-9 bg-muted rounded animate-pulse w-full" />
                 ) : (
-                  <Input value={fullName} readOnly className="opacity-70 cursor-not-allowed text-sm sm:text-base" />
+                  <Input value={fullName} readOnly className="opacity-70 cursor-not-allowed text-sm h-9" />
                 )}
               </div>
               <div>
-                <label className="block mb-1 font-medium text-sm sm:text-base">{t('Email')}</label>
+                <label className="block mb-2 font-medium text-sm">{t('Email')}</label>
                 {accountLoading ? (
-                  <div className="h-10 bg-muted rounded animate-pulse w-full" />
+                  <div className="h-9 bg-muted rounded animate-pulse w-full" />
                 ) : (
-                  <Input value={email} readOnly className="opacity-70 cursor-not-allowed text-sm sm:text-base" />
+                  <Input value={email} readOnly className="opacity-70 cursor-not-allowed text-sm h-9" />
                 )}
               </div>
               <div>
-                <label className="block mb-1 font-medium text-sm sm:text-base">{t('Password')}</label>
+                <label className="block mb-2 font-medium text-sm">{t('Password')}</label>
                 <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="mt-1 text-sm sm:text-base">{t('Change Password')}</Button>
+                    <Button variant="outline" className="text-sm h-9">{t('Change Password')}</Button>
                   </DialogTrigger>
                   <DialogContent className="bg-card shadow-2xl border border-border rounded-2xl p-0 max-w-lg animate-fade-in">
                     {/* Enhanced Stepper */}
@@ -537,27 +556,27 @@ export default function SettingsPage() {
             </div>
           </div>
           {/* Security Section */}
-          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-6 sm:p-8 animate-slide-in-up relative overflow-hidden">
-            <div className="absolute left-0 top-6 h-10 w-1 bg-gradient-to-b from-yellow-500 to-yellow-400 rounded-r-full" />
-            <h2 className="text-lg sm:text-xl font-bold mb-6 sm:mb-8 pl-6 flex items-center gap-3">
-              <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-4 sm:p-6 animate-slide-in-up relative overflow-hidden">
+            <div className="absolute left-0 top-4 h-8 w-1 bg-gradient-to-b from-yellow-500 to-yellow-400 rounded-r-full" />
+            <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-5 pl-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
               Security Settings
             </h2>
-            <div className="flex flex-col gap-4 sm:gap-6">
+            <div className="flex flex-col gap-3 sm:gap-4">
               <div>
-                <label className="block mb-1 font-medium text-sm sm:text-base">Phone Number</label>
-                <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Add or update phone number" className="text-sm sm:text-base" />
+                <label className="block mb-1 font-medium text-xs sm:text-sm">Phone Number</label>
+                <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Add or update phone number" className="text-sm h-8" />
               </div>
               <div>
-                <span className="font-medium text-sm sm:text-base">Two-Factor Authentication</span>
+                <span className="font-medium text-xs sm:text-sm">Two-Factor Authentication</span>
                 {twoFAEnabled ? (
                   <div className="mt-2">
-                    <div className="text-green-600 font-medium mb-2 text-sm sm:text-base">2FA is enabled</div>
+                    <div className="text-green-600 font-medium mb-1 text-xs sm:text-sm">2FA is enabled</div>
                     <Button
                       variant="outline"
-                      className="mb-2 text-sm sm:text-base"
+                      className="mb-1 text-xs sm:text-sm h-7"
                       onClick={() => {
                         setTwoFASetupMode('disable');
                         setTwoFACode('');
@@ -602,14 +621,14 @@ export default function SettingsPage() {
                           onChange={e => setTwoFACode(e.target.value)}
                           placeholder="Enter 6-digit code"
                           maxLength={6}
-                          className="w-40 text-sm sm:text-base"
+                          className="w-32 text-xs sm:text-sm h-7"
                           required
                         />
                         <div className="flex gap-2">
-                          <Button type="submit" disabled={twoFALoading} variant="destructive" className="text-sm sm:text-base">
+                          <Button type="submit" disabled={twoFALoading} variant="destructive" className="text-xs sm:text-sm h-7">
                             {twoFALoading ? 'Disabling...' : 'Confirm Disable'}
                           </Button>
-                          <Button type="button" variant="ghost" onClick={() => setTwoFASetupMode(null)} disabled={twoFALoading} className="text-sm sm:text-base">Cancel</Button>
+                          <Button type="button" variant="ghost" onClick={() => setTwoFASetupMode(null)} disabled={twoFALoading} className="text-xs sm:text-sm h-7">Cancel</Button>
                         </div>
                         {twoFAError && <div className="text-destructive text-sm">{twoFAError}</div>}
                       </form>
@@ -645,12 +664,12 @@ export default function SettingsPage() {
                         }
                       }}
                       disabled={twoFALoading}
-                      className="text-sm sm:text-base"
+                      className="text-xs sm:text-sm h-8"
                     >
                       Set up 2FA
                     </Button>
                     {(!phone || phone.trim().length < 8) && (
-                      <div className="text-destructive text-sm mt-2">Please enter your phone number above before enabling 2FA.</div>
+                      <div className="text-destructive text-xs sm:text-sm mt-1">Please enter your phone number above before enabling 2FA.</div>
                     )}
                     {twoFASetupMode === 'setup' && (
                       <form
@@ -683,23 +702,23 @@ export default function SettingsPage() {
                         }}
                       >
                         {twoFAQR && (
-                          <img src={twoFAQR} alt="2FA QR Code" className="w-40 h-40 mb-2 border rounded" />
+                          <img src={twoFAQR} alt="2FA QR Code" className="w-32 h-32 mb-2 border rounded" />
                         )}
                         <Input
                           value={twoFACode}
                           onChange={e => setTwoFACode(e.target.value)}
                           placeholder="Enter 6-digit code"
                           maxLength={6}
-                          className="w-40 text-sm sm:text-base"
+                          className="w-32 text-xs sm:text-sm h-8"
                           required
                         />
                         <div className="flex gap-2">
-                          <Button type="submit" disabled={twoFALoading} className="text-sm sm:text-base">
+                          <Button type="submit" disabled={twoFALoading} className="text-xs sm:text-sm h-8">
                             {twoFALoading ? 'Enabling...' : 'Verify & Enable'}
                           </Button>
-                          <Button type="button" variant="ghost" onClick={() => setTwoFASetupMode(null)} disabled={twoFALoading} className="text-sm sm:text-base">Cancel</Button>
+                          <Button type="button" variant="ghost" onClick={() => setTwoFASetupMode(null)} disabled={twoFALoading} className="text-xs sm:text-sm h-8">Cancel</Button>
                         </div>
-                        {twoFAError && <div className="text-destructive text-sm">{twoFAError}</div>}
+                        {twoFAError && <div className="text-destructive text-xs sm:text-sm">{twoFAError}</div>}
                       </form>
                     )}
                   </div>
@@ -736,60 +755,7 @@ export default function SettingsPage() {
               >
                 {securitySaving ? 'Saving...' : 'Save Changes'}
               </Button>
-              <div>
-                <label className="block mb-1 font-medium text-sm sm:text-base">Logged-in Devices</label>
-                {devicesLoading ? (
-                  <div className="text-muted-foreground text-sm">Loading devices...</div>
-                ) : devicesError ? (
-                  <div className="text-destructive text-sm">{devicesError}</div>
-                ) : (
-                  <ul className="space-y-2">
-                   {devices.length === 0 ? (
-                     <li className="text-muted-foreground text-sm">No active devices found.</li>
-                   ) : devices.map(device => (
-                     <li key={device.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-muted rounded px-3 py-2">
-                       <div className="flex-1 min-w-0">
-                         <div className="font-medium text-sm sm:text-base truncate">{device.device || 'Unknown Device'}</div>
-                         <div className="text-xs text-muted-foreground">
-                           Login time: {device.createdAt ? new Date(device.createdAt).toLocaleString() : 'Unknown'}
-                         </div>
-                       </div>
-                       <Button
-                         size="sm"
-                         variant="outline"
-                         className="mt-2 sm:mt-0 text-xs sm:text-sm"
-                         onClick={async () => {
-                           try {
-                             const res = await fetch('/api/settings/devices', {
-                               method: 'DELETE',
-                               headers: { 
-                                 'Content-Type': 'application/json',
-                                 'Authorization': `Bearer ${localStorage.getItem('creator_jwt')}`
-                               },
-                               body: JSON.stringify({ email: user?.email, sessionId: device.id }),
-                             });
-                             const data = await res.json();
-                             if (data.success) {
-                               setDevices(devices.filter(d => d.id !== device.id));
-                               toast({ title: 'Device revoked', description: `Device has been revoked.` });
-                             } else {
-                               toast({ title: 'Error', description: data.error || 'Failed to revoke device', variant: 'destructive' });
-                             }
-                           } catch (error) {
-                             toast({ title: 'Error', description: 'Failed to revoke device', variant: 'destructive' });
-                           }
-                         }}
-                       >
-                         Revoke
-                       </Button>
-                     </li>
-                   ))}
-                  </ul>
-                )}
-                <div className="mt-2 text-xs text-muted-foreground">
-                  Only real logged-in devices are shown. Devices are tracked when you log in from different browsers or devices.
-                </div>
-              </div>
+
             </div>
           </div>
 
@@ -799,14 +765,264 @@ export default function SettingsPage() {
           <div className="col-span-2 my-2">
             <div className="border-t border-destructive/30 w-full" />
           </div>
+          {/* Logged-in Devices Section - right side */}
+          <div className="md:col-span-1 bg-card/80 backdrop-blur border border-blue-500/30 shadow-xl rounded-2xl p-4 sm:p-6 animate-slide-in-up relative overflow-hidden">
+            <div className="absolute left-0 top-4 h-8 w-1 bg-gradient-to-b from-blue-500 to-blue-400 rounded-r-full" />
+            <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-5 pl-4 flex items-center gap-2">
+              <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Active Devices
+            </h2>
+            <div className="space-y-3">
+              {devicesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  <span className="ml-3 text-muted-foreground">Loading devices...</span>
+                </div>
+              ) : devicesError ? (
+                <div className="text-center py-8">
+                  <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <div className="text-destructive font-medium">{devicesError}</div>
+                </div>
+              ) : devices.length === 0 ? (
+                <div className="text-center py-8">
+                  <svg className="w-12 h-12 text-muted-foreground mx-auto mb-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-muted-foreground font-medium">No Active Devices</div>
+                  <p className="text-sm text-muted-foreground mt-2">Devices will appear here when you log in from different browsers or devices.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {devices.map(device => (
+                    <div key={device.id} className="bg-muted/50 border border-border rounded-lg p-3 hover:bg-muted/70 transition-colors duration-200">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div className="font-medium text-xs sm:text-sm truncate">{device.device || 'Unknown Device'}</div>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Login time: {device.createdAt ? new Date(device.createdAt).toLocaleString() : 'Unknown'}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 h-7"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch('/api/settings/devices', {
+                                method: 'DELETE',
+                                headers: { 
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${localStorage.getItem('creator_jwt')}`
+                                },
+                                body: JSON.stringify({ email: user?.email, sessionId: device.id }),
+                              });
+                              const data = await res.json();
+                              if (data.success) {
+                                setDevices(devices.filter(d => d.id !== device.id));
+                                toast({ title: 'Device revoked', description: `Device has been revoked.` });
+                              } else {
+                                toast({ title: 'Error', description: data.error || 'Failed to revoke device', variant: 'destructive' });
+                              }
+                            } catch (error) {
+                              toast({ title: 'Error', description: 'Failed to revoke device', variant: 'destructive' });
+                            }
+                          }}
+                        >
+                          Revoke
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="text-xs text-muted-foreground text-center pt-3 border-t border-border">
+                Only real logged-in devices are shown. Devices are tracked when you log in from different browsers or devices.
+              </div>
+            </div>
+          </div>
+
+
+
+          {/* Notification Settings Section */}
+          <div className="col-span-1 md:col-span-3 bg-card/80 backdrop-blur border border-blue-500/30 shadow-xl rounded-2xl p-4 sm:p-6 animate-slide-in-up relative overflow-hidden mt-2">
+            <div className="absolute left-0 top-4 h-8 w-1 bg-gradient-to-b from-blue-500 to-blue-400 rounded-r-full" />
+            <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-5 pl-4 flex items-center gap-2">
+              <Settings className="w-4 h-4 text-blue-500" />
+              Notification Settings
+            </h2>
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1">
+                    <MessageSquare className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm">New Copyright Matches</div>
+                      <div className="text-xs text-muted-foreground">Get notified when new copyright matches are found</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    {notificationSaving && <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
+                    <Switch
+                      checked={notificationSettings.newCopyrightMatches}
+                      onCheckedChange={(checked) => {
+                        setNotificationSettings(prev => ({ ...prev, newCopyrightMatches: checked }));
+                        setNotificationSaving(true);
+                        // Simulate API call
+                        setTimeout(() => {
+                          setNotificationSaving(false);
+                          toast({ title: 'Settings updated', description: 'Notification preferences saved successfully.' });
+                        }, 1000);
+                      }}
+                      className="data-[state=checked]:bg-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1">
+                    <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm">Weekly Reports</div>
+                      <div className="text-xs text-muted-foreground">Receive weekly summary of your content protection</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    {notificationSaving && <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
+                    <Switch
+                      checked={notificationSettings.weeklyReports}
+                      onCheckedChange={(checked) => {
+                        setNotificationSettings(prev => ({ ...prev, weeklyReports: checked }));
+                        setNotificationSaving(true);
+                        // Simulate API call
+                        setTimeout(() => {
+                          setNotificationSaving(false);
+                          toast({ title: 'Settings updated', description: 'Notification preferences saved successfully.' });
+                        }, 1000);
+                      }}
+                      className="data-[state=checked]:bg-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-3 flex-1">
+                    <MessageSquare className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm">Promotional Emails</div>
+                      <div className="text-xs text-muted-foreground">Receive updates about new features and offers</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    {notificationSaving && <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
+                    <Switch
+                      checked={notificationSettings.promotionalEmails}
+                      onCheckedChange={(checked) => {
+                        setNotificationSettings(prev => ({ ...prev, promotionalEmails: checked }));
+                        setNotificationSaving(true);
+                        // Simulate API call
+                        setTimeout(() => {
+                          setNotificationSaving(false);
+                          toast({ title: 'Settings updated', description: 'Notification preferences saved successfully.' });
+                        }, 1000);
+                      }}
+                      className="data-[state=checked]:bg-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Subscription & Billing Section */}
+          <div className="col-span-1 md:col-span-3 bg-card/80 backdrop-blur border border-green-500/30 shadow-xl rounded-2xl p-4 sm:p-6 animate-slide-in-up relative overflow-hidden mt-2">
+            <div className="absolute left-0 top-4 h-8 w-1 bg-gradient-to-b from-green-500 to-green-400 rounded-r-full" />
+            <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-5 pl-4 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-green-500" />
+              Subscription & Billing
+            </h2>
+            <div className="space-y-4">
+              {/* Current Plan */}
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-5 h-5 text-green-500" />
+                    <div>
+                      <div className="font-semibold text-sm">{subscription.plan} Plan</div>
+                      <div className="text-xs text-muted-foreground capitalize">{subscription.status}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-sm">{subscription.amount}</div>
+                    <div className="text-xs text-muted-foreground">per month</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="text-xs h-8">
+                    Upgrade Plan
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-xs h-8">
+                    Cancel Subscription
+                  </Button>
+                </div>
+              </div>
+
+              {/* Next Billing */}
+              <div className="p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-green-500" />
+                    <div>
+                      <div className="font-medium text-sm">Next Billing Date</div>
+                      <div className="text-xs text-muted-foreground">{subscription.nextBillingDate}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoice History */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="w-4 h-4 text-green-500" />
+                  <div className="font-medium text-sm">Invoice History</div>
+                </div>
+                <div className="space-y-2">
+                  {invoices.map((invoice) => (
+                    <div key={invoice.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-4 h-4 text-green-500" />
+                        <div>
+                          <div className="font-medium text-sm">Invoice #{invoice.id}</div>
+                          <div className="text-xs text-muted-foreground">{invoice.date}</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-medium text-sm">{invoice.amount}</div>
+                        <div className="text-xs text-muted-foreground capitalize">{invoice.status}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Danger Zone Section - full width */}
-          <div className="col-span-2 bg-card/80 backdrop-blur border border-destructive/60 shadow-xl rounded-2xl p-4 sm:p-8 animate-slide-in-up relative overflow-hidden mt-2">
-            <div className="absolute left-0 top-6 h-8 w-1 bg-destructive rounded-r-full" />
-            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 pl-4 flex items-center gap-2 text-destructive"><Trash2 className="w-5 h-5" /> Danger Zone</h2>
-            <div className="flex flex-col gap-6 sm:gap-8">
+          <div className="col-span-1 md:col-span-3 bg-card/80 backdrop-blur border border-destructive/60 shadow-xl rounded-2xl p-4 sm:p-6 animate-slide-in-up relative overflow-hidden mt-2">
+            <div className="absolute left-0 top-4 h-8 w-1 bg-destructive rounded-r-full" />
+            <h2 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 pl-4 flex items-center gap-2 text-destructive"><Trash2 className="w-4 h-4" /> Danger Zone</h2>
+            <div className="flex flex-col gap-3 sm:gap-4">
               <Button
                 variant="outline"
-                className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2 text-sm sm:text-base"
+                className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2 text-xs sm:text-sm h-8"
                 disabled={dangerLoading.export}
                 onClick={async () => {
                   setDangerLoading(l => ({ ...l, export: true }));
@@ -830,11 +1046,11 @@ export default function SettingsPage() {
                   }
                 }}
               >
-                {dangerLoading.export ? 'Exporting...' : <><Download className="w-4 h-4" /> Export My Data</>}
+                {dangerLoading.export ? 'Exporting...' : <><Download className="w-3.5 h-3.5" /> Export My Data</>}
               </Button>
               <Button
                 variant="outline"
-                className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2 text-sm sm:text-base"
+                className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2 text-xs sm:text-sm h-8"
                 disabled={dangerLoading.reset}
                 onClick={async () => {
                   setDangerLoading(l => ({ ...l, reset: true }));
@@ -853,21 +1069,21 @@ export default function SettingsPage() {
                   }
                 }}
               >
-                {dangerLoading.reset ? 'Resetting...' : <><RefreshCcw className="w-4 h-4" /> Reset All Connections</>}
+                {dangerLoading.reset ? 'Resetting...' : <><RefreshCcw className="w-3.5 h-3.5" /> Reset All Connections</>}
               </Button>
               <Button
                 variant="destructive"
-                className="flex items-center gap-2 text-sm sm:text-base"
+                className="flex items-center gap-2 text-xs sm:text-sm h-8"
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={dangerLoading.delete}
               >
-                <Trash2 className="w-4 h-4" /> Delete My Account
+                <Trash2 className="w-3.5 h-3.5" /> Delete My Account
               </Button>
               {showDeleteConfirm && (
-                <div className="mt-4 p-4 bg-destructive/10 border border-destructive rounded-lg">
-                  <p className="mb-2 text-destructive font-semibold text-sm sm:text-base">Are you sure you want to delete your account? This action cannot be undone.</p>
+                <div className="mt-3 p-3 bg-destructive/10 border border-destructive rounded-lg">
+                  <p className="mb-2 text-destructive font-semibold text-xs sm:text-sm">Are you sure you want to delete your account? This action cannot be undone.</p>
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={dangerLoading.delete} className="text-sm sm:text-base">Cancel</Button>
+                    <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={dangerLoading.delete} className="text-xs sm:text-sm h-7">Cancel</Button>
                     <Button
                       variant="destructive"
                       disabled={dangerLoading.delete}
@@ -893,7 +1109,7 @@ export default function SettingsPage() {
                           setDangerLoading(l => ({ ...l, delete: false }));
                         }
                       }}
-                      className="text-sm sm:text-base"
+                      className="text-xs sm:text-sm h-7"
                     >
                       {dangerLoading.delete ? 'Deleting...' : 'Yes, Delete Permanently'}
                     </Button>

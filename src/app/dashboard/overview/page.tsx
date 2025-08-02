@@ -168,64 +168,36 @@ export default function OverviewPage() {
       </Card>
       )}
 
-<<<<<<< HEAD
-             {/* Platform Stats - Show real data when connected (3 cards) */}
-       {activePlatform ? (
-         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6">
-                     {/* Primary Metric */}
-           <Card className="bg-white/5 border-gray-600/30 hover:bg-white/10 transition-colors duration-200 p-5">
-             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-               <CardTitle className="text-xs font-medium text-gray-300">
-                 {activePlatform === 'youtube' ? 'Total Subscribers' : activePlatform === 'instagram' ? 'Total Followers' : 'Total Subscribers'}
-               </CardTitle>
-               <Users className="h-3 w-3 text-green-400" />
-             </CardHeader>
-             <CardContent className="pt-0">
-                             <div className="text-lg font-semibold text-white">
-                 {loading ? (
-                   <div className="animate-pulse bg-gray-600 h-5 w-14 rounded"></div>
-                 ) : activePlatform === 'youtube' && youtubeData ? 
-                   (youtubeData.subscribers === 0 ? (
-                     <div className="flex items-center gap-2">
-                       <span className="text-yellow-400">API Quota Exceeded</span>
-                       <Badge variant="outline" className="text-xs bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                         Limited
-                       </Badge>
-                     </div>
-                   ) : formatNumber(youtubeData.subscribers)) : 
-                   activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.followers ?
-                   formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.followers) :
-                   'N/A'
-                 }
-               </div>
-              <p className="text-xs text-gray-400 mt-0.5">
-=======
       {/* Platform Stats - Show real data when connected (3 cards) */}
       {activePlatform ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6">
           {/* Primary Metric */}
-          <Card className="bg-white/5 border-gray-600/30">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-gray-300">
+          <Card className="bg-white/5 border-gray-600/30 hover:bg-white/10 transition-colors duration-200 p-5">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-xs font-medium text-gray-300">
                 {activePlatform === 'youtube' ? 'Total Subscribers' : activePlatform === 'instagram' ? 'Total Followers' : 'Total Subscribers'}
               </CardTitle>
-              <Users className="h-4 w-4 text-green-400" />
+              <Users className="h-3 w-3 text-green-400" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-white">
+            <CardContent className="pt-0">
+              <div className="text-lg font-semibold text-white">
                 {loading ? (
-                  <div className="animate-pulse bg-gray-600 h-8 w-20 rounded"></div>
+                  <div className="animate-pulse bg-gray-600 h-5 w-14 rounded"></div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
-                  formatNumber(youtubeData.subscribers) : 
-                  activePlatform === 'instagram' && platformStatus?.platforms?.find((p: any) => p.platform === 'instagram')?.data?.followers ?
-                    formatNumber(platformStatus.platforms.find((p: any) => p.platform === 'instagram')?.data?.followers) :
-                  activePlatform === 'tiktok' && platformStatus?.platforms?.find((p: any) => p.platform === 'tiktok')?.data?.followers ?
-                    formatNumber(platformStatus.platforms.find((p: any) => p.platform === 'tiktok')?.data?.followers) :
-                    'N/A'
+                  (youtubeData.subscribers === 0 ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-yellow-400">API Quota Exceeded</span>
+                      <Badge variant="outline" className="text-xs bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                        Limited
+                      </Badge>
+                    </div>
+                  ) : formatNumber(youtubeData.subscribers)) : 
+                  activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.followers ?
+                  formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.followers) :
+                  'N/A'
                 }
               </div>
-              <p className="text-xs text-gray-400">
->>>>>>> 50a6f923a801cf450aae16699a0e38598f64d3b7
+              <p className="text-xs text-gray-400 mt-0.5">
                 {activePlatform === 'youtube' ? 'Channel subscribers' : activePlatform === 'instagram' ? 'Instagram followers' : 'Platform metric'}
               </p>
             </CardContent>
