@@ -4,7 +4,8 @@
 
 @layer base {
   html {
-    font-size: 21px; /* UI thoda bada ho jayega */
+    font-size: 24px; /* Normal font size */
+    zoom: 1; /* 75% zoom for entire application */
   }
 }
 

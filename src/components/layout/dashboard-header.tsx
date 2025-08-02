@@ -77,31 +77,20 @@ export function DashboardHeader({ title, admin = false }: { title?: string, admi
   };
 
   return (
-    <header className="p-4 md:p-6 border-b flex items-center gap-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 transition-all duration-300">
+    <header className="p-2 border-b flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur-sm z-10 transition-all duration-300">
       <SidebarTrigger />
       {sidebarCollapsed ? (
-        <div className="flex items-center gap-3 transition-all duration-300">
-          <Avatar className={`h-8 w-8 transition-all duration-300 ${showGlow ? 'profile-glow' : ''}`}> 
+        <div className="flex items-center gap-2 transition-all duration-300">
+          <Avatar className={`h-6 w-6 transition-all duration-300 ${showGlow ? 'profile-glow' : ''}`}> 
             <AvatarImage src={avatar} alt={displayName} loading="eager" />
-            <AvatarFallback>{avatarFallback}</AvatarFallback>
+            <AvatarFallback className="text-xs">{avatarFallback}</AvatarFallback>
           </Avatar>
-          <span className="text-lg font-semibold">{displayName}</span>
+          <span className="text-sm font-medium">{displayName}</span>
         </div>
       ) : (
-        <h1 className="text-xl font-semibold transition-all duration-300">{title || (admin ? 'Admin Dashboard' : 'Creator Dashboard')}</h1>
+        <h1 className="text-base font-medium transition-all duration-300">{title || (admin ? 'Admin Dashboard' : 'Creator Dashboard')}</h1>
       )}
       <div className="flex-1" />
-      
-      {/* Logout Button */}
-      <Button
-        onClick={handleSignOut}
-        variant="ghost"
-        size="sm"
-        className="flex items-center gap-2 text-gray-600 hover:text-red-600 hover:bg-red-50"
-      >
-        <LogOut className="h-4 w-4" />
-        <span className="hidden sm:inline">Logout</span>
-      </Button>
     </header>
   );
 }

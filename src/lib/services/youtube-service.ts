@@ -58,6 +58,22 @@ export async function getChannelStats(channelId: string) {
         return result;
     } catch (error) {
         console.error(`Error fetching real channel stats for ${channelId}:`, error);
+        
+        // Check if it's a quota exceeded error
+        if (error.message && error.message.includes('quota')) {
+            console.warn('YouTube API quota exceeded. Using fallback data.');
+            // Return fallback data when quota is exceeded
+            return {
+                id: channelId,
+                title: 'Channel Data Unavailable',
+                avatar: null,
+                subscribers: 0,
+                views: 0,
+                videos: 0,
+                url: `https://www.youtube.com/channel/${channelId}`
+            };
+        }
+        
         throw new Error("Failed to fetch channel statistics from YouTube. Please check the Channel ID.");
     }
 }
@@ -100,6 +116,16 @@ export async function getMostViewedVideo(channelId: string) {
 
     } catch (error) {
         console.error(`Error fetching most viewed video for ${channelId}:`, error);
+        
+        // Check if it's a quota exceeded error
+        if (error.message && error.message.includes('quota')) {
+            console.warn('YouTube API quota exceeded. Using fallback data for most viewed video.');
+            return {
+                title: 'Video data unavailable',
+                views: 0
+            };
+        }
+        
         throw new Error("Failed to fetch most viewed video.");
     }
 }

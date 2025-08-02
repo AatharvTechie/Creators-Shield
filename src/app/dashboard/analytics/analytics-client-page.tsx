@@ -190,7 +190,18 @@ export default function AnalyticsClientPage() {
 
   // Transform data for charts
   const getChartData = () => {
-    if (!analyticsData?.chartData) return [];
+    if (!analyticsData?.chartData) {
+      // Return real data from analytics if available
+      if (analytics?.dailyData) {
+        return analytics.dailyData.map((day: any) => ({
+          date: day.date,
+          subscribers: day.subscribers || 0,
+          views: day.views || 0,
+          videos: 0 // No video count in daily data
+        }));
+      }
+      return [];
+    }
     
     return analyticsData.chartData.labels.map((label: string, index: number) => ({
       date: label,
@@ -215,10 +226,10 @@ export default function AnalyticsClientPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white">
+          <h1 className="text-xl sm:text-2xl font-bold text-white">
             {hasRealData ? 'YouTube Analytics' : 'Analytics Dashboard'}
           </h1>
-          <p className="text-gray-400">
+          <p className="text-sm text-gray-400">
             {hasRealData 
               ? 'Real-time analytics and performance metrics for your YouTube channel'
               : 'Connect your YouTube channel to see detailed analytics'
@@ -284,7 +295,7 @@ export default function AnalyticsClientPage() {
             <Activity className="h-4 w-4 text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-lg font-bold text-white">
               {hasRealData ? 'Connected' : 'Not Connected'}
             </div>
             <p className="text-xs text-gray-400">
@@ -300,7 +311,7 @@ export default function AnalyticsClientPage() {
             <Users className="h-4 w-4 text-blue-400" />
                 </CardHeader>
                 <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-lg font-bold text-white">
               {analytics?.subscribers ? formatNumber(analytics.subscribers) : 'N/A'}
             </div>
             <p className="text-xs text-gray-400">Total subscribers</p>
@@ -314,7 +325,7 @@ export default function AnalyticsClientPage() {
             <Eye className="h-4 w-4 text-green-400" />
                 </CardHeader>
                 <CardContent>
-            <div className="text-2xl font-bold text-white">
+            <div className="text-lg font-bold text-white">
               {analytics?.views ? formatNumber(analytics.views) : 'N/A'}
             </div>
             <p className="text-xs text-gray-400">Lifetime views</p>

@@ -37,48 +37,79 @@ export async function getDashboardData(userEmail?: string): Promise<DashboardDat
     let stats: any = null;
     let mostViewed: any = null;
     let violations: Violation[] = [];
+    
+    // Always fetch violations first
+    violations = await getViolationsForUser(dbUser.id);
+    
     if (channelId) {
         try {
-        // Fetch stats, mostViewed, and violations in parallel
-        const [statsResult, mostViewedResult, violationsResult] = await Promise.all([
-          getChannelStats(channelId),
-          getMostViewedVideo(channelId),
-          getViolationsForUser(dbUser.id),
-        ]);
-        stats = statsResult;
-        mostViewed = mostViewedResult;
-        violations = violationsResult;
-        console.log('Dashboard data results:', { stats, mostViewed, violations });
+            console.log('🔄 Fetching YouTube data for channel:', channelId);
+            
+            // Fetch stats, mostViewed in parallel
+            const [statsResult, mostViewedResult] = await Promise.all([
+                getChannelStats(channelId),
+                getMostViewedVideo(channelId),
+            ]);
+            
+            stats = statsResult;
+            mostViewed = mostViewedResult;
+            console.log('✅ YouTube data fetched successfully:', { stats, mostViewed });
+            
             if (stats) {
                 userAnalytics = {
                     subscribers: stats.subscribers,
                     views: stats.views,
                     mostViewedVideo: {
-                        title: mostViewed.title || undefined,
-                        views: mostViewed.views
+                        title: mostViewed.title || 'No video data',
+                        views: mostViewed.views || 0
                     },
-                          dailyData: Array.from({ length: 15 }, (_, i) => {
-              const date = subDays(new Date(), 14 - i);
-              const progress = (i + 1) / 15;
+                    dailyData: Array.from({ length: 15 }, (_, i) => {
+                        const date = subDays(new Date(), 14 - i);
+                        const progress = (i + 1) / 15;
                         const curve = Math.pow(progress, 1.2);
-              const dailyViews = Math.round((stats.views * curve - stats.views * Math.pow((i) / 15, 1.2)));
-              const dailySubscribers = Math.round((stats.subscribers * curve - stats.subscribers * Math.pow((i) / 15, 1.2)));
+                        const dailyViews = Math.round((stats.views * curve - stats.views * Math.pow((i) / 15, 1.2)));
+                        const dailySubscribers = Math.round((stats.subscribers * curve - stats.subscribers * Math.pow((i) / 15, 1.2)));
                         return {
                             date: format(date, 'yyyy-MM-dd'),
                             views: Math.max(0, dailyViews),
                             subscribers: Math.max(0, dailySubscribers),
                         };
                     }),
-                }
-            console.log('User analytics created:', userAnalytics);
+                };
+                console.log('✅ User analytics created:', userAnalytics);
+            } else {
+                console.warn('⚠️ No stats returned from YouTube API');
             }
         } catch (error) {
-            console.warn("Could not fetch YouTube analytics. This might be due to an invalid API key or channel ID.", error);
-            userAnalytics = null;
+            console.error("❌ Could not fetch YouTube analytics:", error);
+            
+            // Check if it's a quota exceeded error
+            if (error.message && error.message.includes('quota')) {
+                console.warn("⚠️ YouTube API quota exceeded. Using fallback data.");
+                // Create fallback analytics data
+                userAnalytics = {
+                    subscribers: 0,
+                    views: 0,
+                    mostViewedVideo: {
+                        title: 'Data unavailable (API quota exceeded)',
+                        views: 0
+                    },
+                    dailyData: Array.from({ length: 15 }, (_, i) => {
+                        const date = subDays(new Date(), 14 - i);
+                        return {
+                            date: format(date, 'yyyy-MM-dd'),
+                            views: 0,
+                            subscribers: 0,
+                        };
+                    }),
+                };
+            } else {
+                console.warn("This might be due to an invalid API key or channel ID.");
+                userAnalytics = null;
+            }
         }
     } else {
-      // If no channel, still fetch violations
-      violations = await getViolationsForUser(dbUser.id);
+        console.log('ℹ️ No YouTube channel ID found for user');
     }
 
     const activity = violations.slice(0, 5).map((violation: Violation) => {

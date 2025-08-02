@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, Shield, Send, CheckCircle, XCircle } from "lucide-react";
-import { AdvancedLoader } from "@/components/ui/advanced-loader";
+
 
 interface DeactivationDialogProps {
   isOpen: boolean;
@@ -293,8 +293,8 @@ export function DeactivationDialog({
               >
                 {isSubmitting ? (
                   <>
-                    <AdvancedLoader size="sm" variant="spinner" color="primary" />
-                    <span className="ml-2">Submitting...</span>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Submitting...
                   </>
                 ) : (
                   <>

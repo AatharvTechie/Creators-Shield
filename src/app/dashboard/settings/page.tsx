@@ -74,7 +74,7 @@ export default function SettingsPage() {
     }
   }, [user]);
 
-  // Dummy devices list
+  // Real devices list
   const [devices, setDevices] = useState<Device[]>([]);
   const [devicesLoading, setDevicesLoading] = useState(false);
   const [devicesError, setDevicesError] = useState('');
@@ -111,29 +111,23 @@ export default function SettingsPage() {
     setTwoFAError('');
   }, [user]);
 
-  // Fetch devices on mount
-  useEffect(() => {
-    setDevicesLoading(true);
-    fetch(`/api/settings/devices?email=${email}`)
-      .then(res => res.json())
-      .then(data => {
-        setDevices(data.devices || []);
-        setDevicesLoading(false);
-      })
-      .catch(() => {
-        setDevicesError('Failed to load devices');
-        setDevicesLoading(false);
-      });
-  }, [email]);
-
-  // Refresh devices when user changes
+  // Fetch real devices on mount
   useEffect(() => {
     if (user?.email) {
       setDevicesLoading(true);
-      fetch(`/api/settings/devices?email=${user.email}`)
+      fetch(`/api/settings/devices?email=${user.email}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('creator_jwt')}`,
+          'Content-Type': 'application/json'
+        }
+      })
         .then(res => res.json())
         .then(data => {
-          setDevices(data.devices || []);
+          if (data.success) {
+            setDevices(data.devices || []);
+          } else {
+            setDevicesError(data.error || 'Failed to load devices');
+          }
           setDevicesLoading(false);
         })
         .catch(() => {
@@ -176,23 +170,50 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen w-full px-2 md:px-0">
       <div className="max-w-3xl mx-auto pt-4 sm:pt-8 pb-4">
-        {/* Profile summary card */}
-        <div className="flex items-center gap-3 sm:gap-4 bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl px-4 sm:px-8 py-4 sm:py-7 mb-6 sm:mb-10 animate-fade-in">
-          <img src={youtubeChannel && youtubeChannel.thumbnail ? youtubeChannel.thumbnail : profileAvatar} alt="Avatar" className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-primary/60 shadow-md" />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg sm:text-xl font-bold text-primary">{profileName}</span>
-              {youtubeChannel && <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-700/30 text-green-400 font-semibold">YouTube Connected</span>}
+        {/* Enhanced Profile summary card */}
+        <div className="flex items-center gap-4 sm:gap-6 bg-gradient-to-r from-card/90 to-card/70 backdrop-blur border border-border/50 shadow-2xl rounded-3xl px-6 sm:px-10 py-6 sm:py-8 mb-8 sm:mb-12 animate-fade-in relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent" />
+          <div className="relative z-10 flex items-center gap-4 sm:gap-6">
+            <div className="relative">
+              <img src={youtubeChannel && youtubeChannel.thumbnail ? youtubeChannel.thumbnail : profileAvatar} alt="Avatar" className="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-3 border-primary/40 shadow-lg ring-2 ring-primary/20" />
+              {youtubeChannel && (
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-background flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              )}
             </div>
-            <div className="text-muted-foreground text-xs sm:text-sm">{email}</div>
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-1">
+                <span className="text-xl sm:text-2xl font-bold text-primary">{profileName}</span>
+                {youtubeChannel && (
+                  <span className="px-3 py-1 text-xs rounded-full bg-green-500/20 text-green-400 font-semibold border border-green-500/30">
+                    YouTube Connected
+                  </span>
+                )}
+              </div>
+              <div className="text-muted-foreground text-sm sm:text-base flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {email}
+              </div>
+            </div>
           </div>
         </div>
         {/* 2-column grid for main settings cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
           {/* General Section */}
-          <div className="bg-card/80 backdrop-blur border border-primary/30 shadow-xl rounded-2xl p-4 sm:p-8 animate-slide-in-up relative overflow-hidden">
-            <div className="absolute left-0 top-6 h-8 w-1 bg-primary rounded-r-full" />
-            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 pl-4 flex items-center gap-2">General</h2>
+          <div className="bg-card/80 backdrop-blur border border-primary/30 shadow-xl rounded-2xl p-6 sm:p-8 animate-slide-in-up relative overflow-hidden">
+            <div className="absolute left-0 top-6 h-10 w-1 bg-gradient-to-b from-primary to-primary/60 rounded-r-full" />
+            <h2 className="text-lg sm:text-xl font-bold mb-6 sm:mb-8 pl-6 flex items-center gap-3">
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              General Settings
+            </h2>
             <div className="flex flex-col gap-4 sm:gap-6">
               <div>
                 <label className="block mb-1 font-medium text-sm sm:text-base">{t('Theme')}</label>
@@ -236,9 +257,14 @@ export default function SettingsPage() {
             </div>
           </div>
           {/* Account Section */}
-          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-4 sm:p-8 animate-slide-in-up relative overflow-hidden">
-            <div className="absolute left-0 top-6 h-8 w-1 bg-blue-500 rounded-r-full" />
-            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 pl-4 flex items-center gap-2">Account</h2>
+          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-6 sm:p-8 animate-slide-in-up relative overflow-hidden">
+            <div className="absolute left-0 top-6 h-10 w-1 bg-gradient-to-b from-blue-500 to-blue-400 rounded-r-full" />
+            <h2 className="text-lg sm:text-xl font-bold mb-6 sm:mb-8 pl-6 flex items-center gap-3">
+              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Account Settings
+            </h2>
             <div className="flex flex-col gap-4 sm:gap-6">
               <div>
                 <label className="block mb-1 font-medium text-sm sm:text-base">{t('Legal Full Name')}</label>
@@ -262,44 +288,77 @@ export default function SettingsPage() {
                   <DialogTrigger asChild>
                     <Button variant="outline" className="mt-1 text-sm sm:text-base">{t('Change Password')}</Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-card shadow-2xl border border-border rounded-2xl p-0 max-w-md animate-fade-in">
-                    {/* Stepper */}
-                    <div className="flex items-center justify-between px-4 sm:px-8 pt-4 sm:pt-8 pb-2">
+                  <DialogContent className="bg-card shadow-2xl border border-border rounded-2xl p-0 max-w-lg animate-fade-in">
+                    {/* Enhanced Stepper */}
+                    <div className="flex items-center justify-between px-6 sm:px-8 pt-6 sm:pt-8 pb-4">
                       <div className="flex-1 flex flex-col items-center">
-                        <div className={`w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='email' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>1</div>
-                        <span className="text-xs mt-1">Email</span>
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300 ${verificationStep==='email' ? 'border-primary bg-primary/20 text-primary shadow-lg' : 'border-border bg-muted text-muted-foreground'}`}>
+                          <span className="text-sm font-medium">1</span>
+                        </div>
+                        <span className="text-xs mt-2 font-medium">Email</span>
                       </div>
-                      <div className="flex-1 h-0.5 bg-border mx-1" />
+                      <div className={`flex-1 h-1 mx-2 transition-all duration-300 ${verificationStep==='otp' || verificationStep==='reset' ? 'bg-primary' : 'bg-border'}`} />
                       <div className="flex-1 flex flex-col items-center">
-                        <div className={`w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='otp' ? 'border-primary bg-primary/10 text-primary' : verificationStep==='reset' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>2</div>
-                        <span className="text-xs mt-1">OTP</span>
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300 ${verificationStep==='otp' || verificationStep==='reset' ? 'border-primary bg-primary/20 text-primary shadow-lg' : 'border-border bg-muted text-muted-foreground'}`}>
+                          <span className="text-sm font-medium">2</span>
+                        </div>
+                        <span className="text-xs mt-2 font-medium">OTP</span>
                       </div>
-                      <div className="flex-1 h-0.5 bg-border mx-1" />
+                      <div className={`flex-1 h-1 mx-2 transition-all duration-300 ${verificationStep==='reset' ? 'bg-primary' : 'bg-border'}`} />
                       <div className="flex-1 flex flex-col items-center">
-                        <div className={`w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center rounded-full border-2 ${verificationStep==='reset' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-muted text-muted-foreground'}`}>3</div>
-                        <span className="text-xs mt-1">New Password</span>
+                        <div className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full border-2 transition-all duration-300 ${verificationStep==='reset' ? 'border-primary bg-primary/20 text-primary shadow-lg' : 'border-border bg-muted text-muted-foreground'}`}>
+                          <span className="text-sm font-medium">3</span>
+                        </div>
+                        <span className="text-xs mt-2 font-medium">New Password</span>
                       </div>
                     </div>
-                    <DialogHeader className="px-4 sm:px-8 pt-2 pb-0">
-                      <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                    <DialogHeader className="px-6 sm:px-8 pt-4 pb-2">
+                      <DialogTitle className="flex items-center gap-3 text-lg sm:text-xl font-bold">
                         {verificationStep === 'reset' && passwordSuccess ? (
-                          <span className="inline-flex items-center text-green-600"><svg className="w-6 h-6 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>Success</span>
+                          <span className="inline-flex items-center text-green-600">
+                            <svg className="w-7 h-7 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Password Changed Successfully!
+                          </span>
                         ) : (
-                          <span>Change Password</span>
+                          <span className="flex items-center gap-2">
+                            <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Change Password
+                          </span>
                         )}
                       </DialogTitle>
-                      <DialogDescription className="text-sm sm:text-base">
+                      <DialogDescription className="text-sm sm:text-base text-muted-foreground">
                         {verificationStep === 'email' && (
-                          <span className="flex items-center gap-2 text-primary"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>For your security, please verify your email before changing your password.</span>
+                          <span className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            For your security, please verify your email before changing your password.
+                          </span>
                         )}
                         {verificationStep === 'otp' && (
-                          <span className="flex items-center gap-2 text-primary"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>Enter the OTP sent to your email.</span>
+                          <span className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Enter the 6-digit OTP sent to your email address.
+                          </span>
                         )}
                         {verificationStep === 'reset' && !passwordSuccess && (
-                          <span className="flex items-center gap-2 text-primary"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 8v4l3 3" /></svg>Set a new password for your account.</span>
+                          <span className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Set a new secure password for your account.
+                          </span>
                         )}
                         {verificationStep === 'reset' && passwordSuccess && (
-                          <span className="flex items-center gap-2 text-green-700">Your password has been changed successfully.</span>
+                          <span className="flex items-center gap-2 text-green-600">
+                            Your password has been changed successfully. Please use your new password next time you log in.
+                          </span>
                         )}
                       </DialogDescription>
                     </DialogHeader>
@@ -478,9 +537,14 @@ export default function SettingsPage() {
             </div>
           </div>
           {/* Security Section */}
-          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-4 sm:p-8 animate-slide-in-up relative overflow-hidden">
-            <div className="absolute left-0 top-6 h-8 w-1 bg-yellow-500 rounded-r-full" />
-            <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 pl-4 flex items-center gap-2">Security</h2>
+          <div className="bg-card/80 backdrop-blur border border-border shadow-xl rounded-2xl p-6 sm:p-8 animate-slide-in-up relative overflow-hidden">
+            <div className="absolute left-0 top-6 h-10 w-1 bg-gradient-to-b from-yellow-500 to-yellow-400 rounded-r-full" />
+            <h2 className="text-lg sm:text-xl font-bold mb-6 sm:mb-8 pl-6 flex items-center gap-3">
+              <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Security Settings
+            </h2>
             <div className="flex flex-col gap-4 sm:gap-6">
               <div>
                 <label className="block mb-1 font-medium text-sm sm:text-base">Phone Number</label>
@@ -686,12 +750,8 @@ export default function SettingsPage() {
                      <li key={device.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-muted rounded px-3 py-2">
                        <div className="flex-1 min-w-0">
                          <div className="font-medium text-sm sm:text-base truncate">{device.device || 'Unknown Device'}</div>
-                         <div className="text-xs text-muted-foreground break-all">{device.userAgent}</div>
                          <div className="text-xs text-muted-foreground">
                            Login time: {device.createdAt ? new Date(device.createdAt).toLocaleString() : 'Unknown'}
-                         </div>
-                         <div className="text-xs text-muted-foreground">
-                           Last active: {device.lastActive ? new Date(device.lastActive).toLocaleString() : 'Unknown'}
                          </div>
                        </div>
                        <Button
@@ -702,8 +762,11 @@ export default function SettingsPage() {
                            try {
                              const res = await fetch('/api/settings/devices', {
                                method: 'DELETE',
-                               headers: { 'Content-Type': 'application/json' },
-                               body: JSON.stringify({ email, sessionId: device.id }),
+                               headers: { 
+                                 'Content-Type': 'application/json',
+                                 'Authorization': `Bearer ${localStorage.getItem('creator_jwt')}`
+                               },
+                               body: JSON.stringify({ email: user?.email, sessionId: device.id }),
                              });
                              const data = await res.json();
                              if (data.success) {
@@ -724,7 +787,7 @@ export default function SettingsPage() {
                   </ul>
                 )}
                 <div className="mt-2 text-xs text-muted-foreground">
-                  Devices are automatically tracked when you log in from different browsers or devices.
+                  Only real logged-in devices are shown. Devices are tracked when you log in from different browsers or devices.
                 </div>
               </div>
             </div>

@@ -62,6 +62,12 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
           return;
         }
 
+        // Check if data is already loaded and user hasn't logged out
+        if (user && !loading) {
+          console.log('✅ Data already loaded, skipping fetch');
+          return;
+        }
+
         // Create session for device tracking when dashboard loads
         try {
           const userAgent = navigator.userAgent;
@@ -248,7 +254,12 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
   };
 
   const refresh = () => {
-    // Trigger a refresh by refetching user data
+    // Force refresh by clearing user data and refetching
+    setUser(null);
+    setAnalytics(null);
+    setActivity(null);
+    setUsageStats(null);
+    setPlatformStatus(null);
     setLoading(true);
     setError(null);
     // This will trigger the useEffect to refetch data
