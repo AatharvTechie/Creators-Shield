@@ -18,7 +18,7 @@ export default function ChooseDashboard() {
   const handleCreatorClick = () => {
     const role = getUserRole();
     if (role === 'creator') {
-      router.push('/dashboard'); // or '/dashboard/overview' if that's your main dashboard
+      router.push('/dashboard/overview'); // Redirect to overview dashboard
     } else {
       router.push('/auth/register');
     }

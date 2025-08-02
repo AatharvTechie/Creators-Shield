@@ -2,8 +2,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-import connectToDatabase from '@/lib/mongodb';
-import Session from '@/models/Session';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
 
@@ -26,70 +24,10 @@ const PUBLIC_ROUTES = [
   '/api/auth/google/callback',
   '/api/auth/[...nextauth]',
   '/api/webhooks',
-  '/api/test'
+  '/api/test',
+  '/api/get-user',
+  '/api/auth/create-session'
 ];
-
-// Routes that should update session activity
-const SESSION_UPDATE_ROUTES = [
-  '/dashboard',
-  '/api/dashboard',
-  '/api/settings',
-  '/api/payment'
-];
-
-async function updateSessionActivity(userId: string, sessionId?: string) {
-  try {
-    // Only run in production or when explicitly needed
-    if (process.env.NODE_ENV === 'development') {
-      return;
-    }
-    
-    await connectToDatabase();
-    
-    // Update last active time for current session
-    if (sessionId) {
-      await Session.updateOne(
-        { user: userId, sessionId },
-        { lastActive: new Date() }
-      );
-    } else {
-      // Update the current session (isCurrentSession: true)
-      await Session.updateOne(
-        { user: userId, isCurrentSession: true },
-        { lastActive: new Date() }
-      );
-    }
-  } catch (error) {
-    console.error('Error updating session activity:', error);
-  }
-}
-
-async function checkSessionExpiration(userId: string) {
-  try {
-    // Only run in production or when explicitly needed
-    if (process.env.NODE_ENV === 'development') {
-      return;
-    }
-    
-    await connectToDatabase();
-    
-    // Remove expired sessions
-    const expiredSessions = await Session.find({
-      user: userId,
-      expiresAt: { $lt: new Date() }
-    });
-    
-    if (expiredSessions.length > 0) {
-      await Session.deleteMany({
-        user: userId,
-        expiresAt: { $lt: new Date() }
-      });
-      console.log(`Removed ${expiredSessions.length} expired sessions for user ${userId}`);
-    }
-  } catch (error) {
-    console.error('Error checking session expiration:', error);
-  }
-}
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -139,21 +77,6 @@ export async function middleware(req: NextRequest) {
       email: payload.email,
       role: payload.role
     });
-    
-    // Check session expiration for creators
-    if (payload.role === 'creator') {
-      try {
-        await checkSessionExpiration(payload.id as string);
-        
-        // Update session activity for session update routes
-        if (SESSION_UPDATE_ROUTES.some(route => pathname.startsWith(route))) {
-          await updateSessionActivity(payload.id as string);
-        }
-      } catch (error) {
-        console.error('Error in session management:', error);
-        // Continue with the request even if session management fails
-      }
-    }
     
     // Check if user is suspended or deactivated
     if (payload.role === 'creator') {

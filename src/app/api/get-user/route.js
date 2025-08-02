@@ -13,10 +13,12 @@ export async function GET(req) {
   }
   
   try {
-  await connectToDatabase();
+    console.log("🔌 Attempting to connect to database...");
+    await connectToDatabase();
     console.log("✅ Database connected successfully");
     
-  const user = await Creator.findOne({ email }).lean();
+    console.log("🔍 Querying database for user...");
+    const user = await Creator.findOne({ email }).lean();
     console.log("🔍 Database query result:", user ? "User found" : "User not found");
     
     if (!user) {
@@ -42,18 +44,41 @@ export async function GET(req) {
       plan: user.plan
     });
     
-  return Response.json({
+    return Response.json({
       _id: user._id,
-    name: user.name,
-    email: user.email,
-    youtubeChannelId: user.youtubeChannelId,
-    youtubeChannel: user.youtubeChannel,
+      name: user.name,
+      email: user.email,
+      youtubeChannelId: user.youtubeChannelId,
+      youtubeChannel: user.youtubeChannel,
       disconnectApproved: user.disconnectApproved,
       plan: user.plan,
       planExpiry: user.planExpiry
-  });
+    });
   } catch (error) {
     console.error("❌ Database error:", error);
-    return Response.json({ error: "Database error" }, { status: 500 });
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('ECONNREFUSED')) {
+        return Response.json({ 
+          error: "Database connection failed" 
+        }, { status: 500 });
+      }
+      if (error.message.includes('MongoNetworkError')) {
+        return Response.json({ 
+          error: "Database network error" 
+        }, { status: 500 });
+      }
+      if (error.message.includes('MongoServerSelectionError')) {
+        return Response.json({ 
+          error: "Database server selection error" 
+        }, { status: 500 });
+      }
+    }
+    
+    return Response.json({ 
+      error: "Database error",
+      details: error instanceof Error ? error.message : "Unknown error"
+    }, { status: 500 });
   }
 }

@@ -1,46 +1,52 @@
-import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyToken } from '@/lib/auth-utils';
+import connectToDatabase from '@/lib/mongodb';
+import Creator from '@/models/Creator';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
-
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     // Get token from Authorization header
     const authHeader = req.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    
-    if (!token) {
-      return NextResponse.json({ 
-        error: 'No token provided',
-        message: 'Authentication token is required.'
-      }, { status: 401 });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'No token provided' }, { status: 401 });
     }
 
-    // Verify JWT token
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(JWT_SECRET));
+    const token = authHeader.substring(7);
     
-    console.log('✅ Token verified for user:', {
-      id: payload.id,
-      email: payload.email,
-      role: payload.role
+    // Verify the token
+    const payload = await verifyToken(token);
+    if (!payload) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Connect to database to get full user data
+    await connectToDatabase();
+    
+    // Find user in database
+    const user = await Creator.findOne({ email: payload.email }).lean();
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Return user data (excluding sensitive information)
+    return NextResponse.json({
+      id: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      role: payload.role,
+      plan: user.plan,
+      planExpiry: user.planExpiry,
+      youtubeChannelId: user.youtubeChannelId,
+      youtubeChannel: user.youtubeChannel,
+      disconnectApproved: user.disconnectApproved,
+      status: user.status
     });
-    
-    return NextResponse.json({ 
-      success: true,
-      user: {
-        id: payload.id,
-        email: payload.email,
-        name: payload.name,
-        role: payload.role,
-        plan: payload.plan
-      }
-    });
-    
+
   } catch (error) {
-    console.error('Token verification error:', error);
+    console.error('Token verification failed:', error);
     return NextResponse.json({ 
-      error: 'Invalid token',
-      message: 'The provided authentication token is invalid or expired.'
-    }, { status: 401 });
+      error: 'Token verification failed',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 } 

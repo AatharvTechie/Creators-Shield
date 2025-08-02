@@ -35,12 +35,19 @@ export async function POST(req) {
       planExpiry = new Date();
       planExpiry.setFullYear(planExpiry.getFullYear() + 1);
     }
-    await Creator.findByIdAndUpdate(userId, {
+    await Creator.findOneAndUpdate({ email: userId }, {
       subscriptionId: subscription.id,
       plan: planId,
       planExpiry: planExpiry,
+      subscriptionStatus: 'pending',
+      lastPaymentDate: new Date()
     });
-    return Response.json({ subscriptionId: subscription.id });
+    return Response.json({ 
+      success: true,
+      subscriptionId: subscription.id,
+      plan: planId,
+      planExpiry: planExpiry
+    });
   } catch (err) {
     console.error('CREATE SUBSCRIPTION ERROR:', err);
     return Response.json({ error: err.message, details: err }, { status: 500 });

@@ -32,7 +32,6 @@ function PaymentSuccessForm() {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          router.push('/dashboard');
           return 0;
         }
         return prev - 1;
@@ -40,7 +39,14 @@ function PaymentSuccessForm() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [router]);
+  }, []);
+
+  // Handle redirect when countdown reaches 0
+  useEffect(() => {
+    if (countdown === 0) {
+      router.push('/dashboard/overview');
+    }
+  }, [countdown, router]);
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
@@ -54,7 +60,7 @@ function PaymentSuccessForm() {
               Payment Successful!
             </CardTitle>
             <CardDescription className="text-gray-300 text-lg">
-              Welcome to CreatorShield! Your subscription is now active.
+              Welcome to CreatorShield! Your subscription is now active and your plan has been updated in real-time.
             </CardDescription>
           </CardHeader>
           
@@ -62,16 +68,19 @@ function PaymentSuccessForm() {
             {/* Subscription Details */}
             <div className="bg-white/5 rounded-lg p-6 border border-gray-600/30">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <PlanIcon className={`w-8 h-8 ${currentPlan.color} mr-3`} />
-                  <div>
-                    <h3 className="text-xl font-bold text-white">{currentPlan.name}</h3>
-                    <p className="text-gray-400">Duration: {currentPlan.duration}</p>
-                  </div>
+                              <div className="flex items-center">
+                <PlanIcon className={`w-8 h-8 ${currentPlan.color} mr-3`} />
+                <div>
+                  <h3 className="text-xl font-bold text-white">{currentPlan.name}</h3>
+                  <p className="text-gray-400">Duration: {currentPlan.duration}</p>
                 </div>
-                <Badge variant="secondary" className="text-sm">
+              </div>
+              <Badge variant="secondary" className="text-sm bg-green-500/20 text-green-400 border-green-500/30">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                   Active
-                </Badge>
+                </div>
+              </Badge>
               </div>
               
               {subscriptionId && (
@@ -79,6 +88,17 @@ function PaymentSuccessForm() {
                   Subscription ID: {subscriptionId}
                 </div>
               )}
+              
+              {/* Real-time Update Notification */}
+              <div className="mt-4 p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium text-green-400">Plan Updated in Real-time</span>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Your plan has been automatically updated in your dashboard and settings.
+                </p>
+              </div>
             </div>
 
             {/* Features Included */}
@@ -129,7 +149,7 @@ function PaymentSuccessForm() {
                 Redirecting to dashboard in {countdown} seconds...
               </div>
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/dashboard/overview')}
                 className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors"
               >
                 Go to Dashboard Now

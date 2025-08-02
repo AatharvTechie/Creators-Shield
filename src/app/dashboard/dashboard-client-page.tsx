@@ -10,9 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 import { useAuth } from '@/context/auth-context';
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
-import { auth } from '@/lib/firebase';
-import { InteractiveLoader, AutoConnectLoader } from '@/components/ui/loader';
+import { InteractiveLoader, AutoConnectLoader, MultiStageLoader } from '@/components/ui/loader';
 import { useDashboardData } from './dashboard-context';
 
 export default function DashboardClientPage({ initialData }: { initialData: DashboardData | null }) {
@@ -25,13 +23,39 @@ export default function DashboardClientPage({ initialData }: { initialData: Dash
         return <AutoConnectLoader message="Connecting your YouTube channel..." />;
     }
 
-    // Show full screen loader when dashboard is loading
+    // Show advanced interactive loader when dashboard is loading
     if (dashboardLoading) {
-        return <InteractiveLoader show={true} />;
+        return (
+            <InteractiveLoader 
+                show={true} 
+                messages={[
+                    'Loading your dashboard...',
+                    'Preparing analytics...',
+                    'Setting up monitoring...',
+                    'Almost ready...'
+                ]}
+                type="processing"
+                showProgress={true}
+                progress={75}
+            />
+        );
     }
 
     if (isLoading) {
-        return <InteractiveLoader show={true} />;
+        return (
+            <InteractiveLoader 
+                show={true} 
+                messages={[
+                    'Initializing CreatorShield...',
+                    'Loading user data...',
+                    'Preparing dashboard...',
+                    'Setting up your workspace...'
+                ]}
+                type="default"
+                showProgress={true}
+                progress={60}
+            />
+        );
     }
   
     if (!user) {
@@ -42,12 +66,12 @@ export default function DashboardClientPage({ initialData }: { initialData: Dash
                   <CardDescription>To get started, please sign in.</CardDescription>
               </CardHeader>
               <CardContent>
-                  <Button onClick={async () => {
-                      const provider = new GoogleAuthProvider();
-                      await signInWithPopup(auth, provider);
+                  <Button onClick={() => {
+                      // Redirect to login page instead of Firebase auth
+                      window.location.href = '/auth/login';
                   }}>
                       <LogIn className="mr-2 h-5 w-5" />
-                      Sign In with Google
+                      Sign In
                   </Button>
               </CardContent>
           </Card>

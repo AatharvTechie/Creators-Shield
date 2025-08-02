@@ -9,6 +9,7 @@ import { SessionProvider } from 'next-auth/react';
 import { I18nextProvider } from 'react-i18next';
 import i18n from '@/lib/i18n';
 import { DashboardDataProvider } from '@/app/dashboard/dashboard-context';
+import { AuthProvider } from '@/context/auth-context';
 
 export function Providers({ children, ...props }: ThemeProviderProps) {
   return (
@@ -18,14 +19,16 @@ export function Providers({ children, ...props }: ThemeProviderProps) {
         defaultTheme="dark"
         {...props}
       >
-        <DashboardDataProvider>
-        <YouTubeProvider>
-            <I18nextProvider i18n={i18n}>
-          {children}
-          <Toaster />
-            </I18nextProvider>
-        </YouTubeProvider>
-        </DashboardDataProvider>
+        <AuthProvider>
+          <DashboardDataProvider>
+            <YouTubeProvider>
+              <I18nextProvider i18n={i18n}>
+                {children}
+                <Toaster />
+              </I18nextProvider>
+            </YouTubeProvider>
+          </DashboardDataProvider>
+        </AuthProvider>
       </ThemeProvider>
     </SessionProvider>
   );

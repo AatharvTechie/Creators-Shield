@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { useRef } from 'react';
 import bcrypt from 'bcryptjs';
 import { InteractiveLoader } from '@/components/ui/loader';
+import { PlanCard } from '@/components/settings/plan-card';
 
 type MostViewedVideo = { id: string; title: string; thumbnail: string; url: string; viewCount: string };
 type YoutubeChannel = { id: string; title: string; thumbnail: string; url: string; subscriberCount?: string; viewCount?: string; mostViewedVideo?: MostViewedVideo | null };
@@ -90,6 +91,65 @@ export default function SettingsPage() {
   const [devicesError, setDevicesError] = useState('');
   const [securityChanged, setSecurityChanged] = useState(false);
   const [securitySaving, setSecuritySaving] = useState(false);
+  const [bellRinging, setBellRinging] = useState(false);
+  const [newDeviceNotification, setNewDeviceNotification] = useState<string | null>(null);
+
+  // Bell notification effect
+  useEffect(() => {
+    if (bellRinging) {
+      const timer = setTimeout(() => {
+        setBellRinging(false);
+        setNewDeviceNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [bellRinging]);
+
+  // Check for new devices and trigger notifications
+  useEffect(() => {
+    if (devices.length > 0) {
+      const newDevices = devices.filter(device => {
+        const deviceTime = new Date(device.createdAt).getTime();
+        const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+        return deviceTime > fiveMinutesAgo && !device.isCurrentSession;
+      });
+
+      if (newDevices.length > 0) {
+        setBellRinging(true);
+        setNewDeviceNotification(`New device logged in: ${newDevices[0].device}`);
+        
+        // Send email notification
+        sendNewDeviceEmail(newDevices[0]);
+      }
+    }
+  }, [devices]);
+
+  const sendNewDeviceEmail = async (device: Device) => {
+    try {
+      const response = await fetch('/api/settings/new-device-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userEmail: user?.email,
+          deviceInfo: {
+            device: device.device,
+            browser: device.browser,
+            os: device.os,
+            ipAddress: device.ipAddress,
+            loginTime: device.createdAt
+          }
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to send new device email');
+      }
+    } catch (error) {
+      console.error('Error sending new device email:', error);
+    }
+  };
 
   // Notification Settings state
   const [notificationSettings, setNotificationSettings] = useState({
@@ -104,7 +164,7 @@ export default function SettingsPage() {
     plan: user?.plan || 'free',
     status: 'active',
     nextBillingDate: (() => {
-      if (!user?.planExpiry || user?.plan === 'free') return 'N/A';
+      if (!user?.planExpiry || user?.plan === 'free') return 'No billing date';
       const expiryDate = new Date(user.planExpiry);
       const now = new Date();
       if (expiryDate <= now) return 'Expired';
@@ -113,15 +173,27 @@ export default function SettingsPage() {
       if (user.plan === 'monthly') {
         const nextDate = new Date(expiryDate);
         nextDate.setMonth(nextDate.getMonth() + 1);
-        return nextDate.toLocaleDateString();
+        return nextDate.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
       } else if (user.plan === 'yearly') {
         const nextDate = new Date(expiryDate);
         nextDate.setFullYear(nextDate.getFullYear() + 1);
-        return nextDate.toLocaleDateString();
+        return nextDate.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
       }
-      return expiryDate.toLocaleDateString();
+      return expiryDate.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
     })(),
-    amount: user?.plan === 'free' ? '$0.00' : user?.plan === 'monthly' ? '$9.99' : user?.plan === 'yearly' ? '$99.99' : '$0.00'
+    amount: user?.plan === 'free' ? '$0.00' : user?.plan === 'monthly' ? '$70.00' : user?.plan === 'yearly' ? '$500.00' : '$0.00'
   });
   
   // Calculate purchase date and create invoice history
@@ -132,14 +204,18 @@ export default function SettingsPage() {
     } else if (user.plan === 'yearly') {
       expiryDate.setFullYear(expiryDate.getFullYear() - 1);
     }
-    return expiryDate.toLocaleDateString();
-  })() : 'N/A';
+    return expiryDate.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  })() : 'No purchase history';
   
   const [invoices, setInvoices] = useState([
     { 
       id: '1', 
       date: purchaseDate, 
-      amount: user?.plan === 'free' ? '$0.00' : user?.plan === 'monthly' ? '$9.99' : user?.plan === 'yearly' ? '$99.99' : '$0.00', 
+      amount: user?.plan === 'free' ? '$0.00' : user?.plan === 'monthly' ? '$70.00' : user?.plan === 'yearly' ? '$500.00' : '$0.00', 
       status: 'paid',
       description: user?.plan === 'free' ? 'Free Plan' : `${(user?.plan || '').charAt(0).toUpperCase() + (user?.plan || '').slice(1)} Plan Purchase`
     }
@@ -226,9 +302,27 @@ export default function SettingsPage() {
   // Show loader after login and after channel connect, until all dashboard data is loaded
   if (dashboardLoading || connectingNewChannel) {
     const messages = connectingNewChannel 
-      ? ["We are connecting your new channel and loading your data..."] 
-      : ["We are loading your dashboard data..."];
-    return <InteractiveLoader show={true} messages={messages} />;
+      ? [
+          "Connecting your YouTube channel...",
+          "Verifying channel access...",
+          "Loading channel data...",
+          "Setting up monitoring..."
+        ] 
+      : [
+          "Loading your dashboard data...",
+          "Preparing settings...",
+          "Loading user preferences...",
+          "Almost ready..."
+        ];
+    return (
+      <InteractiveLoader 
+        show={true} 
+        messages={messages}
+        type={connectingNewChannel ? "processing" : "default"}
+        showProgress={true}
+        progress={connectingNewChannel ? 85 : 70}
+      />
+    );
   }
 
   return (
@@ -810,14 +904,28 @@ export default function SettingsPage() {
           <div className="col-span-2 my-2">
             <div className="border-t border-destructive/30 w-full" />
           </div>
-          {/* Logged-in Devices Section - right side */}
-          <div className="md:col-span-1 bg-card/80 backdrop-blur border border-blue-500/30 shadow-xl rounded-2xl p-4 sm:p-6 animate-slide-in-up relative overflow-hidden">
+          {/* Logged-in Devices Section - horizontal layout */}
+          <div className="md:col-span-3 bg-card/80 backdrop-blur border border-blue-500/30 shadow-xl rounded-2xl p-4 sm:p-6 animate-slide-in-up relative overflow-hidden">
             <div className="absolute left-0 top-4 h-8 w-1 bg-gradient-to-b from-blue-500 to-blue-400 rounded-r-full" />
             <h2 className="text-base sm:text-lg font-bold mb-4 sm:mb-5 pl-4 flex items-center gap-2">
               <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Active Devices
+              <div className="relative">
+                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors" 
+                     onClick={() => setBellRinging(false)}>
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>
+                  </svg>
+                  {bellRinging && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                  )}
+                </div>
+                {bellRinging && (
+                  <div className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full animate-ping"></div>
+                )}
+              </div>
             </h2>
             <div className="space-y-3">
                 {devicesLoading ? (
@@ -841,7 +949,7 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground mt-2">Devices will appear here when you log in from different browsers or devices.</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {devices.map(device => (
                     <div key={device.id} className={`bg-muted/50 border border-border rounded-lg p-3 hover:bg-muted/70 transition-colors duration-200 ${device.isCurrentSession ? 'ring-2 ring-blue-500/50 bg-blue-500/10' : ''}`}>
                       <div className="flex items-start justify-between">
@@ -860,18 +968,20 @@ export default function SettingsPage() {
                             </div>
                           </div>
                           <div className="text-xs text-muted-foreground space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span>{device.browser} on {device.os}</span>
-                              {device.ipAddress !== 'Unknown' && (
-                                <span>• IP: {device.ipAddress}</span>
-                              )}
-                            </div>
-                            <div>
-                           Login time: {device.createdAt ? new Date(device.createdAt).toLocaleString() : 'Unknown'}
-                         </div>
-                            <div>
-                           Last active: {device.lastActive ? new Date(device.lastActive).toLocaleString() : 'Unknown'}
-                         </div>
+                            {device.isCurrentSession ? (
+                              <>
+                                <div>
+                                 Login time: {device.createdAt ? new Date(device.createdAt).toLocaleString() : 'Unknown'}
+                               </div>
+                                <div>
+                                 Last active: {device.lastActive ? new Date(device.lastActive).toLocaleString() : 'Unknown'}
+                               </div>
+                              </>
+                            ) : (
+                              <div>
+                                Last active: {device.lastActive ? new Date(device.lastActive).toLocaleString() : 'Unknown'}
+                              </div>
+                            )}
                        </div>
                         </div>
                         {!device.isCurrentSession && (
@@ -1020,30 +1130,12 @@ export default function SettingsPage() {
               Subscription & Billing
             </h2>
             <div className="space-y-4">
-              {/* Current Plan */}
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <Shield className="w-5 h-5 text-green-500" />
-                    <div>
-                      <div className="font-semibold text-sm">{subscription.plan} Plan</div>
-                      <div className="text-xs text-muted-foreground capitalize">{subscription.status}</div>
-          </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-sm">{subscription.amount}</div>
-                    <div className="text-xs text-muted-foreground">per month</div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="text-xs h-8">
-                    Upgrade Plan
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-xs h-8">
-                    Cancel Subscription
-                  </Button>
-                </div>
-              </div>
+              {/* Current Plan Card */}
+              <PlanCard 
+                userPlan={user?.plan || 'free'}
+                planExpiry={user?.planExpiry}
+                userEmail={user?.email}
+              />
 
               {/* Next Billing */}
               <div className="p-3 bg-muted/30 rounded-lg">
