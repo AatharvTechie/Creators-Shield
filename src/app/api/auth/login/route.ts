@@ -135,7 +135,7 @@ export async function POST(req: Request) {
         const deviceInfo = getDeviceInfo(userAgent || 'Unknown');
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
-        await Session.findOneAndUpdate(
+        await (Session as any).findOneAndUpdate(
           { 
             user: user._id,
             userAgent: userAgent || 'Unknown',

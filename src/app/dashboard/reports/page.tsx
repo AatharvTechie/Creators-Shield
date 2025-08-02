@@ -1,6 +1,7 @@
 
 'use client';
 
+import React, { useState, useEffect, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -19,7 +20,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Download, Clipboard, Link as LinkIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +61,7 @@ function SubmitReportForm() {
   const [dmcaTemplate, setDmcaTemplate] = useState('');
 
   // Get search params in useEffect to avoid SSR issues
-  React.useEffect(() => {
+  useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     setPlatform(urlParams.get('platform') || "");
     setSuspectUrl(urlParams.get('url') || "");

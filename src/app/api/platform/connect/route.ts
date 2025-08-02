@@ -3,7 +3,6 @@ import dbConnect from '@/lib/mongodb';
 import Platform from '@/models/Platform';
 import { verifyToken } from '@/lib/auth-utils';
 import { getChannelStats } from '@/lib/services/youtube-service';
-import { getInstagramStats } from '@/lib/services/instagram-service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,18 +51,9 @@ export async function POST(req: NextRequest) {
         views: youtubeData.views,
         videos: youtubeData.videos
       };
-    } else if (platform === 'instagram') {
-      // For testing, pass 'test' as access token to get mock data
-      const instagramData = await getInstagramStats(accountId, 'test');
-      platformData = {
-        accountId: instagramData.id,
-        followers: instagramData.followers,
-        posts: instagramData.posts,
-        totalLikes: instagramData.totalLikes
-      };
     } else {
       return NextResponse.json({ 
-        error: 'Unsupported platform' 
+        error: 'Unsupported platform. Only YouTube is currently supported.' 
       }, { status: 400 });
     }
 

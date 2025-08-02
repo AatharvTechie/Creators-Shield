@@ -1,8 +1,5 @@
-'use server';
-
 import dotenv from "dotenv";
 dotenv.config();
-
 
 import { google } from 'googleapis';
 
@@ -18,7 +15,6 @@ const getYouTubeClient = () => {
     });
 };
 
-
 /**
  * Fetches core statistics for a given YouTube channel ID.
  * @returns An object with channel statistics or null if an error occurs.
@@ -31,7 +27,7 @@ export async function getChannelStats(channelId: string) {
         const response = await youtube.channels.list({
             part: ['snippet', 'statistics'],
             id: [channelId],
-            fields: 'items(id,snippet(title,thumbnails(high)),statistics(subscriberCount,viewCount,videoCount))' // Added videoCount
+            fields: 'items(id,snippet(title,thumbnails(high)),statistics(subscriberCount,viewCount,videoCount))'
         });
 
         console.log('YouTube API response:', response.data);
@@ -51,7 +47,7 @@ export async function getChannelStats(channelId: string) {
             avatar: channel.snippet.thumbnails?.high?.url || channel.snippet.thumbnails?.medium?.url || channel.snippet.thumbnails?.default?.url,
             subscribers: parseInt(channel.statistics.subscriberCount!, 10),
             views: parseInt(channel.statistics.viewCount!, 10),
-            videos: parseInt(channel.statistics.videoCount!, 10), // Added video count
+            videos: parseInt(channel.statistics.videoCount!, 10),
             url: `https://www.youtube.com/channel/${channel.id!}`
         };
         console.log('Channel stats result:', result);
@@ -78,7 +74,6 @@ export async function getChannelStats(channelId: string) {
     }
 }
 
-
 /**
  * Fetches the most viewed video for a given YouTube channel.
  * @returns An object with the most viewed video's details.
@@ -93,7 +88,7 @@ export async function getMostViewedVideo(channelId: string) {
             order: 'viewCount',
             type: ['video'],
             maxResults: 1,
-            fields: 'items(id(videoId),snippet(title))' // Only fetch needed fields
+            fields: 'items(id(videoId),snippet(title))'
         });
         
         const mostViewed = response.data.items?.[0];
@@ -104,7 +99,7 @@ export async function getMostViewedVideo(channelId: string) {
         const videoDetails = await youtube.videos.list({
             part: ['statistics'],
             id: [mostViewed.id.videoId],
-            fields: 'items(statistics(viewCount))' // Only fetch view count
+            fields: 'items(statistics(viewCount))'
         });
 
         const views = videoDetails.data.items?.[0]?.statistics?.viewCount;
@@ -157,3 +152,6 @@ export async function searchYoutubeByKeyword(query: string, maxResults: number =
         throw new Error('Failed to search YouTube.');
     }
 }
+
+// Ensure this file is treated as a module
+export {};

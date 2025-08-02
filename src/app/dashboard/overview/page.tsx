@@ -168,6 +168,7 @@ export default function OverviewPage() {
       </Card>
       )}
 
+<<<<<<< HEAD
              {/* Platform Stats - Show real data when connected (3 cards) */}
        {activePlatform ? (
          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6">
@@ -198,6 +199,33 @@ export default function OverviewPage() {
                  }
                </div>
               <p className="text-xs text-gray-400 mt-0.5">
+=======
+      {/* Platform Stats - Show real data when connected (3 cards) */}
+      {activePlatform ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Primary Metric */}
+          <Card className="bg-white/5 border-gray-600/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-300">
+                {activePlatform === 'youtube' ? 'Total Subscribers' : activePlatform === 'instagram' ? 'Total Followers' : 'Total Subscribers'}
+              </CardTitle>
+              <Users className="h-4 w-4 text-green-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">
+                {loading ? (
+                  <div className="animate-pulse bg-gray-600 h-8 w-20 rounded"></div>
+                ) : activePlatform === 'youtube' && youtubeData ? 
+                  formatNumber(youtubeData.subscribers) : 
+                  activePlatform === 'instagram' && platformStatus?.platforms?.find((p: any) => p.platform === 'instagram')?.data?.followers ?
+                    formatNumber(platformStatus.platforms.find((p: any) => p.platform === 'instagram')?.data?.followers) :
+                  activePlatform === 'tiktok' && platformStatus?.platforms?.find((p: any) => p.platform === 'tiktok')?.data?.followers ?
+                    formatNumber(platformStatus.platforms.find((p: any) => p.platform === 'tiktok')?.data?.followers) :
+                    'N/A'
+                }
+              </div>
+              <p className="text-xs text-gray-400">
+>>>>>>> 50a6f923a801cf450aae16699a0e38598f64d3b7
                 {activePlatform === 'youtube' ? 'Channel subscribers' : activePlatform === 'instagram' ? 'Instagram followers' : 'Platform metric'}
               </p>
             </CardContent>
@@ -217,8 +245,8 @@ export default function OverviewPage() {
                   <div className="animate-pulse bg-gray-600 h-5 w-14 rounded"></div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   formatNumber(youtubeData.views) : 
-                  activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.posts ?
-                  formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.posts) :
+                  activePlatform === 'instagram' && platformStatus?.platforms?.find((p: any) => p.platform === 'instagram')?.data?.posts ?
+                  formatNumber(platformStatus.platforms.find((p: any) => p.platform === 'instagram')?.data?.posts) :
                   'N/A'
                 }
               </div>
@@ -251,8 +279,8 @@ export default function OverviewPage() {
                   <div className="animate-pulse bg-gray-600 h-2.5 w-10 rounded"></div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   `${formatNumber(youtubeData.mostViewedVideo.views)} views` : 
-                  activePlatform === 'instagram' && platformStatus?.platforms?.find(p => p.platform === 'instagram')?.data?.totalLikes ?
-                  `${formatNumber(platformStatus.platforms.find(p => p.platform === 'instagram').data.totalLikes)} likes` :
+                  activePlatform === 'instagram' && platformStatus?.platforms?.find((p: any) => p.platform === 'instagram')?.data?.totalLikes ?
+                  `${formatNumber(platformStatus.platforms.find((p: any) => p.platform === 'instagram')?.data?.totalLikes)} likes` :
                   'No data'
                 }
               </div>

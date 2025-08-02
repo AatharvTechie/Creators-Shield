@@ -18,7 +18,11 @@ import {
   AlertTriangle,
   ExternalLink,
   Settings,
+<<<<<<< HEAD
   MessageCircle,
+=======
+  Hand,
+>>>>>>> 50a6f923a801cf450aae16699a0e38598f64d3b7
   Sparkles,
   Info
 } from 'lucide-react';
