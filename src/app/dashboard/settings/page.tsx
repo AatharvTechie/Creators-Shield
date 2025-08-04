@@ -71,6 +71,9 @@ export default function SettingsPage() {
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const [devices, setDevices] = useState<any[]>([]);
   const [devicesLoading, setDevicesLoading] = useState(true);
+  const [logoutLoading, setLogoutLoading] = useState<string | null>(null); // Track which device is being logged out
+  const [showLogoutWarning, setShowLogoutWarning] = useState(false);
+  const [deviceToLogout, setDeviceToLogout] = useState<any>(null);
 
   // Track if we've already loaded devices initially
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
@@ -85,7 +88,7 @@ export default function SettingsPage() {
     checkForNewDevice,
     confirmNewDevice,
     dismissNewDeviceDialog,
-    testNewDevice
+    clearSessionCheck
   } = useDeviceDetection();
 
   // Add debounce mechanism
@@ -133,6 +136,7 @@ export default function SettingsPage() {
         const newDevices = data.devices || [];
         
         console.log(`📱 Loaded ${newDevices.length} devices`);
+        console.log('📱 Device IDs:', newDevices.map(d => d.id));
         
         // Check if this is the initial load
         if (!hasInitialLoad) {
@@ -162,53 +166,17 @@ export default function SettingsPage() {
         setDevices(newDevices);
         setLastRefreshTime(new Date());
         
-        // If we have new devices, trigger dialog (only if not auto-refresh)
+        // If we have new devices, trigger device detection (only if not auto-refresh)
         if (newDevicesFound.length > 0 && !forceRefresh) {
-          console.log('🎉 New device detected in settings! Triggering dialog...');
+          console.log('🎉 New device detected in settings! Triggering device detection...');
           
-          // Find the newest device (most recent lastActive)
-          const newestDevice = newDevicesFound
-            .sort((a: any, b: any) => new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime())[0];
-          
-          if (newestDevice) {
-            console.log('📱 Newest device found:', newestDevice);
-            
-            // Create device info for dialog
-            const deviceInfo = {
-              device: newestDevice.device,
-              browser: newestDevice.browser,
-              os: newestDevice.os,
-              location: newestDevice.location,
-              ipAddress: newestDevice.ipAddress,
-              loginTime: new Date(newestDevice.lastActive).toLocaleString()
-            };
-            
-            // Store in localStorage for VoiceAlertProvider
-            localStorage.setItem('newDeviceFromSettings', JSON.stringify(deviceInfo));
-            
-            console.log('🎉 New device info stored, dialog should appear immediately');
-            
-            // Force trigger the dialog by dispatching a custom event (mark as genuine new device)
-            window.dispatchEvent(new CustomEvent('newDeviceDetected', { 
-              detail: { ...deviceInfo, isGenuineNewDevice: true } 
-            }));
-            
-            // Also trigger voice alert immediately
-            try {
-              const voiceNotification = await import('@/lib/voice-notification');
-              await voiceNotification.voiceNotification.speakNewDeviceAlert({
-                deviceName: deviceInfo.device,
-                browser: deviceInfo.browser,
-                os: deviceInfo.os,
-                location: deviceInfo.location,
-                time: deviceInfo.loginTime,
-                ipAddress: deviceInfo.ipAddress
-              });
-            } catch (error) {
-              console.error('Voice alert failed:', error);
-            }
-            
-            // Devices state already updated above
+          // Trigger the device detection hook to show dialog
+          const userEmail = localStorage.getItem('user_email');
+          if (userEmail) {
+            // Clear session check to force new detection
+            clearSessionCheck();
+            // Trigger device detection
+            await checkForNewDevice(userEmail);
           }
         }
       } else {
@@ -802,6 +770,77 @@ Report Version: 1.0
     setIsRefreshingDevices(true);
     await loadDevices(true);
     setIsRefreshingDevices(false);
+  };
+
+  // Device logout with warning function
+  const handleDeviceLogout = (device: any) => {
+    setDeviceToLogout(device);
+    setShowLogoutWarning(true);
+  };
+
+  // Confirm device logout (only logout the specific device)
+  const confirmDeviceLogout = async () => {
+    if (!deviceToLogout) return;
+    
+    try {
+      setLogoutLoading(deviceToLogout.id);
+      const token = localStorage.getItem("creator_jwt");
+      const userEmail = localStorage.getItem('user_email');
+      
+      if (!token || !userEmail) return;
+
+      console.log('🔍 Logging out device:', deviceToLogout);
+      console.log('🔍 Session ID being sent:', deviceToLogout.id);
+
+      // Logout only the target device
+      const response = await fetch('/api/auth/logout-device', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userEmail: userEmail,
+          sessionId: deviceToLogout.id,
+          targetDeviceInfo: {
+            device: deviceToLogout.device,
+            browser: deviceToLogout.browser,
+            os: deviceToLogout.os,
+            location: deviceToLogout.location,
+            ipAddress: deviceToLogout.ipAddress
+          }
+        })
+      });
+
+      console.log('🔍 Logout response status:', response.status);
+      const responseData = await response.json();
+      console.log('🔍 Logout response data:', responseData);
+
+      if (response.ok) {
+        console.log('🔒 Device logged out successfully:', deviceToLogout.device);
+        alert(`Successfully logged out from ${deviceToLogout.device}.`);
+        
+        // Reload devices list to reflect the change
+        await loadDevices();
+      } else {
+        console.error('Failed to logout device:', response.status, responseData);
+        alert(`Failed to logout device: ${responseData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error logging out device:', error);
+      alert('Failed to logout device. Please try again.');
+    } finally {
+      setLogoutLoading(null);
+      setShowLogoutWarning(false);
+      setDeviceToLogout(null);
+    }
+  };
+
+  // Cancel device logout
+  const cancelDeviceLogout = () => {
+    setShowLogoutWarning(false);
+    setDeviceToLogout(null);
+    setLogoutLoading(null);
   };
 
   // 2FA Functions
@@ -1443,7 +1482,6 @@ Report Version: 1.0
                   )}
                 </CardTitle>
                 <CardDescription>
-                  💡 Auto-refreshes every 30 seconds. New devices will appear automatically.
                   {user?.plan === 'free' && (
                     <span className="block text-sm text-orange-500 mt-1">
                       ⚠️ Upgrade to Premium to access device management features
@@ -1471,36 +1509,14 @@ Report Version: 1.0
                     </>
                   )}
                 </Button>
-                
-                {/* Temporary test button */}
-                <Button
-                  onClick={() => {
-                    const testDeviceInfo = {
-                      device: 'Test iPhone',
-                      browser: 'Safari 17.0',
-                      os: 'iOS 17.0',
-                      location: 'Mumbai, Maharashtra, India',
-                      ipAddress: '192.168.1.1',
-                      loginTime: new Date().toLocaleString()
-                    };
-                    localStorage.setItem('newDeviceFromSettings', JSON.stringify(testDeviceInfo));
-                    window.dispatchEvent(new CustomEvent('newDeviceDetected', { 
-                      detail: { ...testDeviceInfo, isGenuineNewDevice: true } 
-                    }));
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="bg-yellow-500 text-white hover:bg-yellow-600"
-                >
-                  Test Dialog
-                </Button>
+
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             
             <div className="text-xs text-muted-foreground mb-3">
-              💡 Auto-refreshes every minute. New devices will appear automatically.
+              Auto-refreshes every minute. New devices will appear automatically.
             </div>
             
             <div className="space-y-3">
@@ -1566,39 +1582,17 @@ Report Version: 1.0
                         variant="outline" 
                         size="sm" 
                         className="text-red-600 hover:text-red-700"
-                        onClick={async () => {
-                          try {
-                            const token = localStorage.getItem("creator_jwt");
-                            const userEmail = localStorage.getItem('user_email');
-                            
-                            if (!token || !userEmail) return;
-
-                            // Logout the device using the devices API
-                            const response = await fetch('/api/settings/devices', {
-                              method: 'DELETE',
-                              headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify({
-                                email: userEmail,
-                                sessionId: device.id
-                              })
-                            });
-
-                            if (response.ok) {
-                              console.log('🔒 Device logged out successfully:', device.device);
-                              // Reload devices after logout
-                              await loadDevices();
-                            } else {
-                              console.error('Failed to logout device:', response.status);
-                            }
-                          } catch (error) {
-                            console.error('Error logging out device:', error);
-                          }
-                        }}
+                        disabled={logoutLoading === device.id}
+                        onClick={() => handleDeviceLogout(device)}
                       >
-                        Logout
+                        {logoutLoading === device.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Logging out...
+                          </>
+                        ) : (
+                          'Logout'
+                        )}
                       </Button>
                     )}
                   </div>
@@ -1936,6 +1930,25 @@ Report Version: 1.0
               <RefreshCcw className={`h-4 w-4 mr-2 ${loginHistoryLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Device Logout Warning Dialog */}
+      <AlertDialog open={showLogoutWarning} onOpenChange={setShowLogoutWarning}>
+        <AlertDialogContent className="max-w-md">
+                     <AlertDialogHeader>
+             <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+             <AlertDialogDescription>
+               You are about to logout from <strong>{deviceToLogout?.device}</strong>.
+               This action cannot be undone.
+             </AlertDialogDescription>
+           </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelDeviceLogout}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeviceLogout} className="bg-red-600 hover:bg-red-700">
+              Logout
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

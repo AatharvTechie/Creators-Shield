@@ -11,8 +11,10 @@ import { SuspensionOverlay } from '@/components/ui/suspension-overlay';
 import { PlanUpgradePopup } from '@/components/ui/plan-upgrade-popup';
 import { useSessionActivity } from '@/hooks/use-session-activity';
 import { useDeviceDetection } from '@/hooks/use-device-detection';
+import { useSessionValidation } from '@/hooks/use-session-validation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { VoiceAlertProvider } from '@/components/voice-alert';
+import { NewDeviceAlertDialog } from '@/components/new-device-alert-dialog';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -24,6 +26,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   
   // Initialize device detection
   const { checkForNewDevice, newDeviceInfo, showNewDeviceDialog, confirmNewDevice, dismissNewDeviceDialog } = useDeviceDetection();
+  
+  // Initialize session validation
+  useSessionValidation();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -83,6 +88,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     checkAuth();
   }, [router]);
 
+  // Add periodic device detection check
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    
+    const userEmail = localStorage.getItem('user_email');
+    if (!userEmail) return;
+    
+    // Check for new devices every 30 seconds
+    const deviceCheckInterval = setInterval(() => {
+      console.log('🔄 Periodic device detection check...');
+      checkForNewDevice(userEmail);
+    }, 30000); // 30 seconds
+    
+    return () => {
+      clearInterval(deviceCheckInterval);
+    };
+  }, [isAuthenticated]);
+
   if (!isAuthenticated) {
     return null; // Will redirect to login
   }
@@ -112,46 +135,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           />
           
           {/* New Device Detection Dialog */}
-          <AlertDialog open={showNewDeviceDialog} onOpenChange={dismissNewDeviceDialog}>
-            <AlertDialogContent className="max-w-md">
-              <AlertDialogHeader>
-                <AlertDialogTitle>New Device Detected</AlertDialogTitle>
-                <AlertDialogDescription>
-                  We detected a login from a new device. Please verify this is you.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              
-              {newDeviceInfo && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
-                    <div className="text-2xl">💻</div>
-                    <div className="flex-1">
-                      <p className="font-medium">{newDeviceInfo.deviceName}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {newDeviceInfo.browser} • {newDeviceInfo.os} • {newDeviceInfo.location}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(newDeviceInfo.timestamp).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-muted-foreground">
-                    If this wasn't you, please change your password immediately to secure your account.
-                  </p>
-                </div>
-              )}
-              
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={dismissNewDeviceDialog}>
-                  This Wasn't Me
-                </AlertDialogCancel>
-                <AlertDialogAction onClick={confirmNewDevice}>
-                  Yes, This Was Me
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          {showNewDeviceDialog && newDeviceInfo && (
+            <NewDeviceAlertDialog
+              isOpen={showNewDeviceDialog}
+              onClose={dismissNewDeviceDialog}
+              deviceInfo={{
+                device: newDeviceInfo.deviceName || 'Unknown Device',
+                browser: newDeviceInfo.browser || 'Unknown Browser',
+                os: newDeviceInfo.os || 'Unknown OS',
+                location: newDeviceInfo.location || 'Unknown Location',
+                ipAddress: newDeviceInfo.ipAddress || 'Unknown IP',
+                loginTime: new Date(newDeviceInfo.timestamp).toLocaleString()
+              }}
+            />
+          )}
         </DashboardDataProvider>
       </SidebarProvider>
     </VoiceAlertProvider>

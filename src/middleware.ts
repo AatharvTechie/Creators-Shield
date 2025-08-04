@@ -78,6 +78,36 @@ export async function middleware(req: NextRequest) {
       role: payload.role
     });
     
+    // Check if session is still valid (not logged out)
+    if (payload.sessionId) {
+      try {
+        // Import mongoose and check session status
+        const mongoose = await import('mongoose');
+        const Session = mongoose.model('Session', new mongoose.Schema({
+          sessionId: String,
+          isActive: { type: Boolean, default: true },
+          loggedOutAt: Date
+        }));
+        
+        const session = await Session.findOne({ 
+          sessionId: payload.sessionId,
+          isActive: true 
+        }).exec();
+        
+        if (!session) {
+          console.log('❌ Session has been logged out, forcing logout');
+          // Clear the token and redirect to login
+          const response = NextResponse.redirect(new URL('/auth/login', req.url));
+          response.cookies.delete('creator_jwt');
+          response.cookies.delete('admin_jwt');
+          return response;
+        }
+      } catch (sessionError) {
+        console.log('Session validation failed:', sessionError);
+        // Continue if session validation fails
+      }
+    }
+    
     // Check if user is suspended or deactivated
     if (payload.role === 'creator') {
       // For creator routes, check if they have a plan (except for /plans route)

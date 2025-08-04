@@ -9,6 +9,7 @@ import { LogOut } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useDashboardData } from '@/app/dashboard/dashboard-context';
 import { useAdminProfile } from '@/app/admin/profile-context';
+import { MobileNav } from '@/components/ui/mobile-nav';
 
 export function DashboardHeader({ title, admin = false }: { title?: string, admin?: boolean }) {
   const router = useRouter();
@@ -77,20 +78,61 @@ export function DashboardHeader({ title, admin = false }: { title?: string, admi
   };
 
   return (
-    <header className="p-2 border-b flex items-center gap-2 sticky top-0 bg-background/95 backdrop-blur-sm z-10 transition-all duration-300">
-      <SidebarTrigger />
+    <header className="p-2 sm:p-3 md:p-4 border-b flex items-center gap-2 sm:gap-3 md:gap-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 transition-all duration-300">
+      {/* Mobile Navigation - Only show on mobile */}
+      <div className="lg:hidden">
+        <MobileNav />
+      </div>
+      
+      {/* Desktop Sidebar Trigger - Only show on desktop */}
+      <div className="hidden lg:block">
+        <SidebarTrigger className="touch-target" />
+      </div>
+      
+      {/* Responsive Header Content */}
       {sidebarCollapsed ? (
-        <div className="flex items-center gap-2 transition-all duration-300">
-          <Avatar className={`h-6 w-6 transition-all duration-300 ${showGlow ? 'profile-glow' : ''}`}> 
+        <div className="flex items-center gap-2 sm:gap-3 transition-all duration-300">
+          <Avatar className={`h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 transition-all duration-300 ${showGlow ? 'profile-glow' : ''}`}> 
             <AvatarImage src={avatar} alt={displayName} loading="eager" />
-            <AvatarFallback className="text-xs">{avatarFallback}</AvatarFallback>
+            <AvatarFallback className="text-xs sm:text-sm md:text-base">{avatarFallback}</AvatarFallback>
           </Avatar>
-          <span className="text-sm font-medium">{displayName}</span>
+          <span className="text-xs sm:text-sm md:text-base font-medium truncate max-w-[120px] sm:max-w-[150px] md:max-w-[200px]">
+            {displayName}
+          </span>
         </div>
       ) : (
-        <h1 className="text-base font-medium transition-all duration-300">{title || (admin ? 'Admin Dashboard' : 'Creator Dashboard')}</h1>
+        <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-medium transition-all duration-300 truncate max-w-[200px] sm:max-w-[300px] md:max-w-none">
+          {title || (admin ? 'Admin Dashboard' : 'Creator Dashboard')}
+        </h1>
       )}
+      
+      {/* Spacer */}
       <div className="flex-1" />
+      
+      {/* Responsive Actions */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Sign Out Button - Responsive */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleSignOut}
+          className="hidden sm:flex items-center gap-2 text-xs sm:text-sm touch-target"
+        >
+          <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+          <span className="hidden md:inline">Sign Out</span>
+        </Button>
+        
+        {/* Mobile Sign Out Icon */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleSignOut}
+          className="sm:hidden touch-target"
+          title="Sign Out"
+        >
+          <LogOut className="h-4 w-4" />
+        </Button>
+      </div>
     </header>
   );
 }

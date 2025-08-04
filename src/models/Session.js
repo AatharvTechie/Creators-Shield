@@ -10,6 +10,8 @@ const sessionSchema = new mongoose.Schema({
   os: { type: String },
   location: { type: String },
   isCurrentSession: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true },
+  loggedOutAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
   lastActive: { type: Date, default: Date.now },
   expiresAt: { type: Date, default: function() {

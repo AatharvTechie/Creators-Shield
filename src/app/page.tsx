@@ -95,145 +95,169 @@ export default function Home() {
   // Remove useTypingEffect and typingText
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#181c2f] to-[#232946] text-white">
-      {/* Hero Section - Centered, Full Width, Animated CS */}
-      <div ref={heroRef} className="flex flex-col items-center justify-center min-h-[80vh] w-full px-4 py-24 relative bg-gradient-to-br from-[#1a223f]/80 to-[#232946]/90 overflow-hidden">
-        {/* Animated CS Character/Icon */}
-        <div className={`flex flex-col items-center mb-8 transition-all duration-700 ${showCS ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-75'}`}>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-[#181c2f] to-[#232946] text-white overflow-x-hidden">
+      {/* Hero Section - Fully Responsive */}
+      <div ref={heroRef} className="flex flex-col items-center justify-center min-h-[80vh] w-full px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 py-12 sm:py-16 md:py-20 lg:py-24 relative bg-gradient-to-br from-[#1a223f]/80 to-[#232946]/90 overflow-hidden">
+        {/* Animated CS Character/Icon - Responsive */}
+        <div className={`flex flex-col items-center mb-6 sm:mb-8 transition-all duration-700 ${showCS ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-75'}`}>
           <div className="relative flex items-center justify-center">
-            {/* Glowing shadow/light effect */}
-            <div className="absolute w-56 h-56 md:w-72 md:h-72 rounded-full bg-blue-500/30 blur-3xl z-0 animate-glow" />
-            <div className="w-40 h-40 md:w-56 md:h-56 rounded-full bg-gradient-to-tr from-blue-500 via-light-green-500 to-red-400 shadow-2xl flex items-center justify-center animate-pulse-slow relative z-10">
-              <span className="text-7xl md:text-8xl font-extrabold text-white drop-shadow-lg select-none animate-fade-in-up">CS</span>
+            {/* Glowing shadow/light effect - Responsive */}
+            <div className="absolute w-32 h-32 sm:w-40 sm:h-40 md:w-56 md:h-56 lg:w-64 lg:h-64 xl:w-72 xl:h-72 rounded-full bg-blue-500/30 blur-3xl z-0 animate-glow" />
+            <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 xl:w-56 xl:h-56 rounded-full bg-gradient-to-tr from-blue-500 via-light-green-500 to-red-400 shadow-2xl flex items-center justify-center animate-pulse-slow relative z-10">
+              <span className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold text-white drop-shadow-lg select-none animate-fade-in-up">CS</span>
               {/* Animated shield pulse/glow */}
-              <span className="absolute inset-0 rounded-full border-4 border-blue-300/40 animate-glow" />
+              <span className="absolute inset-0 rounded-full border-2 sm:border-3 md:border-4 border-blue-300/40 animate-glow" />
             </div>
-            {/* Animated shield icon overlay */}
-            <FaShieldAlt className="absolute bottom-2 right-2 text-4xl md:text-5xl text-blue-200 opacity-80 animate-shield-bounce z-20" />
+            {/* Animated shield icon overlay - Responsive */}
+            <FaShieldAlt className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-blue-200 opacity-80 animate-shield-bounce z-20" />
           </div>
-          <div className="mt-2 text-blue-200 text-lg font-semibold tracking-widest animate-fade-in-up delay-200">Your Content. Your Power.</div>
+          <div className="mt-2 text-blue-200 text-sm sm:text-base md:text-lg font-semibold tracking-widest animate-fade-in-up delay-200 text-center">Your Content. Your Power.</div>
         </div>
+        
+        {/* Hero Content - Responsive */}
         <div className={`w-full max-w-4xl text-center mx-auto transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <h1 className="text-6xl md:text-7xl font-extrabold mb-6 drop-shadow-xl tracking-tight leading-tight animate-fade-in">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold mb-4 sm:mb-6 drop-shadow-xl tracking-tight leading-tight animate-fade-in px-2">
             Protect. Monetize. <span className="text-blue-400">Create.</span>
           </h1>
-          <p className="text-xl md:text-2xl text-blue-200 mb-8 leading-relaxed animate-fade-in delay-200">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-blue-200 mb-6 sm:mb-8 leading-relaxed animate-fade-in delay-200 px-4 sm:px-8">
             The ultimate platform for content creators to protect their work, maximize revenue, and focus on what matters most - creating amazing content.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-in delay-400">
-            <Button onClick={handlePlanClick} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-lg font-bold py-4 px-8 rounded-full shadow-lg transition-all duration-200 transform hover:scale-105">
+          
+          {/* Responsive Button Group */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center animate-fade-in delay-400 px-4">
+            <Button 
+              onClick={handlePlanClick} 
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white text-base sm:text-lg font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-full shadow-lg transition-all duration-200 transform hover:scale-105 touch-target"
+            >
               Start Free Trial
             </Button>
-            <Button variant="outline" onClick={() => setShowDialog(true)} className="border-2 border-blue-400 text-blue-300 hover:bg-blue-400 hover:text-white text-lg font-bold py-4 px-8 rounded-full transition-all duration-200 transform hover:scale-105">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDialog(true)} 
+              className="w-full sm:w-auto border-2 border-blue-400 text-blue-300 hover:bg-blue-400 hover:text-white text-base sm:text-lg font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-full transition-all duration-200 transform hover:scale-105 touch-target"
+            >
               Watch Demo
             </Button>
-            <Link href="/faq" className="text-blue-300 hover:text-blue-200 text-lg font-semibold underline">
+            <Link 
+              href="/faq" 
+              className="w-full sm:w-auto text-center text-blue-300 hover:text-blue-200 text-base sm:text-lg font-semibold underline touch-target py-3 sm:py-4"
+            >
               Learn More
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Dialog for Get Started */}
+      {/* Dialog for Get Started - Responsive */}
       {showDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#232946] rounded-3xl shadow-2xl p-12 max-w-xl w-full text-center border-4 border-blue-500 animate-scale-in">
-            <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-blue-300 drop-shadow-xl tracking-tight">Welcome to CreatorShield!</h2>
-            <div className="text-lg md:text-2xl text-gray-200 mb-8 font-medium text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-4">
+          <div className="bg-[#232946] rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 md:p-12 max-w-sm sm:max-w-md md:max-w-xl w-full text-center border-2 sm:border-4 border-blue-500 animate-scale-in overflow-y-auto max-h-[90vh]">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4 sm:mb-6 text-blue-300 drop-shadow-xl tracking-tight">Welcome to CreatorShield!</h2>
+            <div className="text-sm sm:text-base md:text-lg lg:text-2xl text-gray-200 mb-6 sm:mb-8 font-medium text-center leading-relaxed">
               CreatorShield is your all-in-one platform for content protection, copyright management, and creator monetization.<br /><br />
               Join thousands of creators who trust us to protect and grow their digital content. <br /><br />
               AI-powered copyright monitoring, instant takedowns, analytics, and more—all in one place. <b>Your content. Your power.</b>
             </div>
-            <button onClick={() => { setShowDialog(false); window.location.href = '/plans'; }} className="bg-gradient-to-r from-blue-500 to-light-green-500 hover:from-blue-600 hover:to-light-green-600 text-white font-bold py-4 px-16 rounded-full text-2xl shadow-lg transition-transform transform hover:scale-105">Continue to Plans</button>
-            <button onClick={() => setShowDialog(false)} className="block mx-auto mt-6 text-gray-400 hover:text-white text-base">Cancel</button>
+            <button 
+              onClick={() => { setShowDialog(false); window.location.href = '/plans'; }} 
+              className="w-full bg-gradient-to-r from-blue-500 to-light-green-500 hover:from-blue-600 hover:to-light-green-600 text-white font-bold py-3 sm:py-4 px-8 sm:px-16 rounded-full text-lg sm:text-xl md:text-2xl shadow-lg transition-transform transform hover:scale-105 touch-target"
+            >
+              Continue to Plans
+            </button>
+            <button 
+              onClick={() => setShowDialog(false)} 
+              className="block mx-auto mt-4 sm:mt-6 text-gray-400 hover:text-white text-sm sm:text-base touch-target py-2"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
 
-      {/* What is CreatorShield? */}
-      <section ref={whatRef} className={`max-w-5xl mx-auto py-16 px-8 text-left transition-all duration-700 ${whatVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <div className="bg-[#232946]/80 rounded-2xl shadow-2xl p-14 border border-blue-700">
-          <h2 className="text-4xl font-bold mb-4 text-blue-300">What is CreatorShield?</h2>
-          <p className="text-2xl text-gray-200 mb-2">
+      {/* What is CreatorShield? - Responsive */}
+      <section ref={whatRef} className={`max-w-5xl mx-auto section-padding px-4 sm:px-6 md:px-8 text-left transition-all duration-700 ${whatVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <div className="bg-[#232946]/80 rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 lg:p-14 border border-blue-700">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4 text-blue-300">What is CreatorShield?</h2>
+          <p className="text-lg sm:text-xl md:text-2xl text-gray-200 mb-2 leading-relaxed">
             CreatorShield is your trusted partner for content protection, copyright management, and creator monetization.
           </p>
-          <p className="text-lg text-gray-300">
+          <p className="text-base sm:text-lg text-gray-300 leading-relaxed">
             We empower creators to focus on what they do best—creating—while we handle the rest.
           </p>
         </div>
       </section>
 
-      {/* Why We're Unique - 2 columns on desktop */}
-      <section ref={uniqueRef} className={`max-w-6xl mx-auto py-16 px-8 grid grid-cols-1 md:grid-cols-2 gap-14 text-left transition-all duration-700 ${uniqueVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <div className="flex flex-col gap-10">
-          <div className="flex items-center gap-8 bg-[#232946]/90 rounded-2xl shadow-2xl p-10 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-left delay-100">
-            <FaStar className="text-6xl text-yellow-300" />
+      {/* Why We're Unique - Responsive Grid */}
+      <section ref={uniqueRef} className={`max-w-6xl mx-auto section-padding px-4 sm:px-6 md:px-8 grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-14 text-left transition-all duration-700 ${uniqueVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <div className="flex flex-col gap-6 sm:gap-8 md:gap-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 bg-[#232946]/90 rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-left delay-100">
+            <FaStar className="text-4xl sm:text-5xl md:text-6xl text-yellow-300 flex-shrink-0" />
             <div>
-              <h3 className="font-bold text-3xl mb-2">AI-Driven Protection</h3>
-              <p className="text-gray-300 text-xl">Advanced AI to detect and stop copyright infringement across the web.</p>
+              <h3 className="font-bold text-xl sm:text-2xl md:text-3xl mb-2">AI-Driven Protection</h3>
+              <p className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed">Advanced AI to detect and stop copyright infringement across the web.</p>
             </div>
           </div>
-          <div className="flex items-center gap-8 bg-[#232946]/90 rounded-2xl shadow-2xl p-10 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-left delay-200">
-            <FaHandshake className="text-6xl text-green-300" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 bg-[#232946]/90 rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-left delay-200">
+            <FaHandshake className="text-4xl sm:text-5xl md:text-6xl text-green-300 flex-shrink-0" />
             <div>
-              <h3 className="font-bold text-3xl mb-2">Creator-First Commitment</h3>
-              <p className="text-gray-300 text-xl">We put creators first—always. Fair pricing, transparent policies, and real support.</p>
+              <h3 className="font-bold text-xl sm:text-2xl md:text-3xl mb-2">Creator-First Commitment</h3>
+              <p className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed">We put creators first—always. Fair pricing, transparent policies, and real support.</p>
             </div>
           </div>
         </div>
-        <div className="flex flex-col gap-10">
-          <div className="flex items-center gap-8 bg-[#232946]/90 rounded-2xl shadow-2xl p-10 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-right delay-100">
-            <FaLock className="text-6xl text-blue-300" />
+        <div className="flex flex-col gap-6 sm:gap-8 md:gap-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 bg-[#232946]/90 rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-right delay-100">
+            <FaLock className="text-4xl sm:text-5xl md:text-6xl text-blue-300 flex-shrink-0" />
             <div>
-              <h3 className="font-bold text-3xl mb-2">Privacy & Security</h3>
-              <p className="text-gray-300 text-xl">Your data and content are protected with industry-leading security.</p>
+              <h3 className="font-bold text-xl sm:text-2xl md:text-3xl mb-2">Privacy & Security</h3>
+              <p className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed">Your data and content are protected with industry-leading security.</p>
             </div>
           </div>
-          <div className="flex items-center gap-8 bg-[#232946]/90 rounded-2xl shadow-2xl p-10 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-right delay-200">
-            <FaUsers className="text-6xl text-pink-300" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 md:gap-8 bg-[#232946]/90 rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-right delay-200">
+            <FaUsers className="text-4xl sm:text-5xl md:text-6xl text-pink-300 flex-shrink-0" />
             <div>
-              <h3 className="font-bold text-3xl mb-2">Global Community</h3>
-              <p className="text-gray-300 text-xl">Join thousands of creators and industry partners worldwide.</p>
+              <h3 className="font-bold text-xl sm:text-2xl md:text-3xl mb-2">Global Community</h3>
+              <p className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed">Join thousands of creators and industry partners worldwide.</p>
             </div>
-                  </div>
-                </div>
-      </section>
-
-      {/* Features Section - 2 columns on desktop */}
-      <section ref={featuresRef} className={`max-w-7xl mx-auto py-20 px-8 grid grid-cols-1 md:grid-cols-2 gap-16 transition-all duration-700 ${featuresVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <div className="flex flex-col gap-14">
-          <div className="bg-[#232946]/90 rounded-2xl shadow-2xl p-12 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-left delay-100">
-            <FaShieldAlt className="text-7xl text-blue-400 mb-4" />
-            <h3 className="font-bold text-3xl mb-2">Content Protection</h3>
-            <p className="text-gray-300 text-xl">AI-powered copyright monitoring and takedown tools for your videos, music, and more.</p>
-          </div>
-          <div className="bg-[#232946]/90 rounded-2xl shadow-2xl p-12 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-left delay-200">
-            <FaRocket className="text-7xl text-light-green-400 mb-4" />
-            <h3 className="font-bold text-3xl mb-2">Growth Analytics</h3>
-            <p className="text-gray-300 text-xl">Track your reach, audience, and engagement with beautiful dashboards.</p>
-                  </div>
-                </div>
-        <div className="flex flex-col gap-14">
-          <div className="bg-[#232946]/90 rounded-2xl shadow-2xl p-12 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-right delay-100">
-            <FaRegSmile className="text-7xl text-pink-300 mb-4" />
-            <h3 className="font-bold text-3xl mb-2">Easy Monetization</h3>
-            <p className="text-gray-300 text-xl">Subscriptions, tips, and more—get paid for your creativity, instantly.</p>
-          </div>
-          <div className="bg-[#232946]/90 rounded-2xl shadow-2xl p-12 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-right delay-200">
-            <FaRegLightbulb className="text-7xl text-yellow-300 mb-4" />
-            <h3 className="font-bold text-3xl mb-2">Smart Automation</h3>
-            <p className="text-gray-300 text-xl">Automate copyright claims, DMCA, and more with one click.</p>
           </div>
         </div>
       </section>
 
-      {/* Subscription Plans Preview - 3 columns */}
-      <section ref={plansRef} className={`max-w-6xl mx-auto py-20 px-8 text-center transition-all duration-700 ${plansVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <h2 className="text-4xl font-bold mb-10 text-blue-300">Subscription Plans</h2>
-        <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto">
+      {/* Features Section - Responsive Grid */}
+      <section ref={featuresRef} className={`max-w-7xl mx-auto section-padding px-4 sm:px-6 md:px-8 grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 lg:gap-16 transition-all duration-700 ${featuresVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <div className="flex flex-col gap-8 sm:gap-10 md:gap-12 lg:gap-14">
+          <div className="bg-[#232946]/90 rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 lg:p-12 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-left delay-100">
+            <FaShieldAlt className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-blue-400 mb-3 sm:mb-4" />
+            <h3 className="font-bold text-xl sm:text-2xl md:text-3xl mb-2">Content Protection</h3>
+            <p className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed">AI-powered copyright monitoring and takedown tools for your videos, music, and more.</p>
+          </div>
+          <div className="bg-[#232946]/90 rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 lg:p-12 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-left delay-200">
+            <FaRocket className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-light-green-400 mb-3 sm:mb-4" />
+            <h3 className="font-bold text-xl sm:text-2xl md:text-3xl mb-2">Growth Analytics</h3>
+            <p className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed">Track your reach, audience, and engagement with beautiful dashboards.</p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-8 sm:gap-10 md:gap-12 lg:gap-14">
+          <div className="bg-[#232946]/90 rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 lg:p-12 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-right delay-100">
+            <FaRegSmile className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-pink-300 mb-3 sm:mb-4" />
+            <h3 className="font-bold text-xl sm:text-2xl md:text-3xl mb-2">Easy Monetization</h3>
+            <p className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed">Subscriptions, tips, and more—get paid for your creativity, instantly.</p>
+          </div>
+          <div className="bg-[#232946]/90 rounded-xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 md:p-10 lg:p-12 border border-gray-700 hover:shadow-2xl transition-transform transform hover:-translate-y-2 animate-fade-in-right delay-200">
+            <FaRegLightbulb className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-yellow-300 mb-3 sm:mb-4" />
+            <h3 className="font-bold text-xl sm:text-2xl md:text-3xl mb-2">Smart Automation</h3>
+            <p className="text-gray-300 text-base sm:text-lg md:text-xl leading-relaxed">Automate copyright claims, DMCA, and more with one click.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Subscription Plans Preview - Responsive Grid */}
+      <section ref={plansRef} className={`max-w-6xl mx-auto section-padding px-4 sm:px-6 md:px-8 text-center transition-all duration-700 ${plansVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 sm:mb-8 md:mb-10 text-blue-300">Subscription Plans</h2>
+        <p className="text-base sm:text-lg md:text-xl text-gray-300 mb-8 sm:mb-10 md:mb-12 max-w-3xl mx-auto leading-relaxed">
           All plans include complete access to all features. Choose the duration that works best for you.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-center mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 justify-center mb-6 sm:mb-8">
           {[
             {
             name: "Free Trial",

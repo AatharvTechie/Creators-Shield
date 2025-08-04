@@ -504,7 +504,7 @@ export async function detectNewDevice(userEmail: string): Promise<{
         
         // Send alerts
         await sendLoginAlert(userEmail, deviceInfo);
-        speakNotification("Your CreatorShield account has been logged in from a new device.");
+        // Voice alert is now handled by the hook for better timing control
         
         return {
           isNewDevice: true,

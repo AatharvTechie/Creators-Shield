@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { detectNewDevice, speakNotification, stopSpeech } from '@/lib/device-detection';
 
@@ -24,9 +26,9 @@ export function useDeviceDetection() {
       return;
     }
 
-    // Prevent checking too frequently (minimum 10 seconds between checks)
+    // Prevent checking too frequently (minimum 5 seconds between checks for faster response)
     const now = Date.now();
-    if (now - lastCheckTime < 10000) {
+    if (now - lastCheckTime < 5000) {
       console.log('Device check skipped - too recent');
       return;
     }
@@ -38,11 +40,14 @@ export function useDeviceDetection() {
       const result = await detectNewDevice(userEmail);
       
       if (result.isNewDevice && result.deviceInfo) {
+        // Immediately show dialog and trigger voice alert
         setNewDeviceInfo(result.deviceInfo);
         setShowNewDeviceDialog(true);
         
-        // Trigger speech notification
-        speakNotification("Your CreatorShield account has been logged in from a new device.");
+        // Trigger speech notification immediately after dialog opens
+        setTimeout(() => {
+          speakNotification("Your CreatorShield account has been logged in from a new device.");
+        }, 50); // Very small delay to ensure dialog is rendered first
         
         // You can add toast notification here
         console.log('New login detected on your account.');
@@ -118,13 +123,12 @@ export function useDeviceDetection() {
     }
   };
 
-  // Manual trigger for testing (remove in production)
-  const testNewDevice = async () => {
+  // Function to clear session check (for internal use)
+  const clearSessionCheck = () => {
     const userEmail = localStorage.getItem('user_email');
     if (userEmail) {
-      // Clear session check to force a new check
       sessionStorage.removeItem(`device_check_${userEmail}`);
-      await checkForNewDevice(userEmail);
+      setLastCheckTime(0);
     }
   };
 
@@ -135,6 +139,6 @@ export function useDeviceDetection() {
     checkForNewDevice,
     confirmNewDevice,
     dismissNewDeviceDialog,
-    testNewDevice // Remove this in production
+    clearSessionCheck
   };
 } 

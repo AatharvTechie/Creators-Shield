@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect } from 'react';
 
 // Hook to handle email notifications on client side
