@@ -28,7 +28,7 @@ async function connectToDatabase() {
   try {
     if (cached.conn) {
       console.log('✅ Using cached database connection');
-      return cached.conn;
+      return { db: cached.conn.connection.db };
     }
 
     if (!cached.promise) {
@@ -71,7 +71,7 @@ async function connectToDatabase() {
     }
 
     cached.conn = await cached.promise;
-    return cached.conn;
+    return { db: cached.conn.connection.db };
   } catch (error) {
     console.error('Error in connectToDatabase:', error);
     cached.promise = null;
