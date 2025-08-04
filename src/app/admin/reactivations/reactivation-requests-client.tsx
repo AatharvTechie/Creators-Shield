@@ -13,11 +13,11 @@ import { CheckCircle, XCircle, Loader2, User, Calendar } from 'lucide-react';
 interface ReactivationRequest {
   id: string;
   creatorId: string;
-  creatorName: string;
-  creatorEmail: string;
-  status: 'pending' | 'approved' | 'rejected';
-  requestDate: string;
-  reason?: string;
+  name: string;
+  email: string;
+  requestedAt: string;
+  reason: string;
+  explanation: string;
 }
 
 interface ReactivationRequestsClientProps {
@@ -79,7 +79,7 @@ export function ReactivationRequestsClient({ requests }: ReactivationRequestsCli
     }
   };
 
-  if (requests.length === 0) {
+  if (!requests || requests.length === 0) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center h-32">
@@ -101,18 +101,18 @@ export function ReactivationRequestsClient({ requests }: ReactivationRequestsCli
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  {request.creatorName}
+                  {request.name}
                 </CardTitle>
-                <CardDescription>{request.creatorEmail}</CardDescription>
+                <CardDescription>{request.email}</CardDescription>
               </div>
-              {getStatusBadge(request.status)}
+              <Badge variant="secondary">Pending</Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                Requested on: {new Date(request.requestDate).toLocaleDateString()}
+                Requested on: {new Date(request.requestedAt).toLocaleDateString()}
               </div>
               
               {request.reason && (
@@ -122,37 +122,42 @@ export function ReactivationRequestsClient({ requests }: ReactivationRequestsCli
                 </div>
               )}
 
-              {request.status === 'pending' && (
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleApprove(request.id)}
-                    disabled={loading === request.id}
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    {loading === request.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle className="h-4 w-4" />
-                    )}
-                    Approve
-                  </Button>
-                  <Button
-                    onClick={() => handleReject(request.id)}
-                    disabled={loading === request.id}
-                    variant="destructive"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    {loading === request.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <XCircle className="h-4 w-4" />
-                    )}
-                    Reject
-                  </Button>
+              {request.explanation && (
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-sm font-medium">Explanation:</p>
+                  <p className="text-sm text-muted-foreground">{request.explanation}</p>
                 </div>
               )}
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleApprove(request.id)}
+                  disabled={loading === request.id}
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  {loading === request.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4" />
+                  )}
+                  Approve
+                </Button>
+                <Button
+                  onClick={() => handleReject(request.id)}
+                  disabled={loading === request.id}
+                  variant="destructive"
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  {loading === request.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <XCircle className="h-4 w-4" />
+                  )}
+                  Reject
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

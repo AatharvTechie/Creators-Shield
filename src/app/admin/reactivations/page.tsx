@@ -18,7 +18,7 @@ export default async function ReactivationsPage() {
         </p>
       </div>
 
-      <ReactivationRequestsClient initialRequests={reactivationRequests} />
+      <ReactivationRequestsClient requests={reactivationRequests} />
     </div>
   );
 }
