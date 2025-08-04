@@ -22,13 +22,22 @@ export async function GET(req: Request) {
                    req.cookies.get('creator_jwt')?.value;
       if (token) {
         const decoded = jwt.verify(token, JWT_SECRET) as any;
-        // Find current session for this user
+        // Find current session for this user using the JWT session ID
         const currentSession = await Session.findOne({ 
           user: user._id, 
-          isCurrentSession: true 
+          sessionId: decoded.sessionId // Use the session ID from JWT
         });
         if (currentSession) {
           currentSessionId = currentSession.sessionId;
+          // Update this session as current
+          await Session.updateMany(
+            { user: user._id },
+            { isCurrentSession: false }
+          );
+          await Session.updateOne(
+            { user: user._id, sessionId: decoded.sessionId },
+            { isCurrentSession: true }
+          );
         }
       }
     } catch (jwtError) {
@@ -69,6 +78,7 @@ export async function GET(req: Request) {
         device: s.device || 'Unknown Device',
         browser: s.browser || 'Unknown',
         os: s.os || 'Unknown',
+        location: s.location || 'Unknown',
         ipAddress: s.ipAddress || 'Unknown',
         userAgent: s.userAgent || 'Unknown',
         createdAt: s.createdAt,

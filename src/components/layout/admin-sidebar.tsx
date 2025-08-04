@@ -17,6 +17,7 @@ import React from 'react';
 import { hasUnrepliedAdminFeedback } from '@/lib/feedback-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAdminProfile } from '@/app/admin/profile-context';
+import { AdvancedLoader } from '@/components/ui/advanced-loader';
 
 const menuItems = [
   { href: '/admin/overview', label: 'Overview', icon: BarChart },
@@ -30,6 +31,7 @@ const menuItems = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const [hasNewFeedback, setHasNewFeedback] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
     async function checkUnread() {
@@ -39,6 +41,8 @@ export function AdminSidebar() {
         setHasNewFeedback(!!data.hasUnread);
       } catch {
         setHasNewFeedback(false);
+      } finally {
+        setIsLoading(false);
       }
     }
     checkUnread();
@@ -52,28 +56,49 @@ export function AdminSidebar() {
         <SidebarProfileHeader />
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu className="gap-4">
-          {menuItems.map((item) => (
-            <SidebarMenuItem 
-              key={item.href}
-              notification={item.href === '/admin/feedback' ? hasNewFeedback : false}
-            >
-              <SidebarMenuButton
-                asChild
-                isActive={pathname === item.href || (pathname === '/admin' && item.href === '/admin/overview')}
-                tooltip={item.label}
+        {isLoading ? (
+          <div className="space-y-4 p-4">
+            <AdvancedLoader 
+              type="data" 
+              size="sm" 
+              text="Loading admin panel..." 
+              subtext="Preparing dashboard"
+              className="mx-2"
+            />
+            {/* Show skeleton menu items while loading */}
+            <div className="space-y-2">
+              {menuItems.map((item, index) => (
+                <div key={item.href} className="flex items-center gap-3 py-3 px-4 rounded-lg bg-muted/20 animate-pulse">
+                  <div className="h-4 w-4 bg-muted rounded" />
+                  <div className="h-4 bg-muted rounded flex-1" style={{ width: `${Math.random() * 60 + 40}%` }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <SidebarMenu className="gap-4">
+            {menuItems.map((item) => (
+              <SidebarMenuItem 
+                key={item.href}
+                notification={item.href === '/admin/feedback' ? hasNewFeedback : false}
               >
-                <Link href={item.href} className="pl-4 flex items-center gap-3">
-                  <item.icon />
-                  {item.href === '/admin/feedback' && hasNewFeedback && (
-                    <span className="absolute -top-1 left-5 w-2 h-2 rounded-full bg-green-500 animate-pulse z-10" />
-                  )}
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href || (pathname === '/admin' && item.href === '/admin/overview')}
+                  tooltip={item.label}
+                >
+                  <Link href={item.href} className="pl-4 flex items-center gap-3">
+                    <item.icon />
+                    {item.href === '/admin/feedback' && hasNewFeedback && (
+                      <span className="absolute -top-1 left-5 w-2 h-2 rounded-full bg-green-500 animate-pulse z-10" />
+                    )}
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu className="gap-4">

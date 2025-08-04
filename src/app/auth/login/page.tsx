@@ -65,6 +65,19 @@ export default function LoginPage() {
         localStorage.setItem("user_email", data.user.email);
       }
       
+      // Store device info for voice alert if new device
+      if (data.isNewDevice && data.deviceInfo) {
+        console.log('🔊 Login: New device detected, storing device info:', data.deviceInfo);
+        localStorage.setItem("newDeviceInfo", JSON.stringify(data.deviceInfo));
+        // Add newDevice parameter to URL for voice alert
+        const redirectUrl = data.user && data.user.role === 'admin' ? "/admin" : "/dashboard/overview";
+        console.log('🔊 Login: Redirecting to:', `${redirectUrl}?newDevice=true`);
+        router.push(`${redirectUrl}?newDevice=true`);
+        return;
+      } else {
+        console.log('🔊 Login: No new device detected. isNewDevice:', data.isNewDevice, 'deviceInfo:', data.deviceInfo);
+      }
+      
       // Post-auth redirect logic
       const postAuthRedirect = typeof window !== 'undefined' ? localStorage.getItem('postAuthRedirect') : null;
       if (postAuthRedirect) {

@@ -16,15 +16,20 @@ const YouTubeContext = React.createContext<YouTubeContextType | null>(null);
 export function YouTubeProvider({ children }: { children: React.ReactNode }) {
   const dashboardData = useDashboardData();
   const user = dashboardData?.user;
-  const isYouTubeConnected = !!(user?.youtubeChannelId || user?.youtubeChannel?.id);
+  const isLoading = dashboardData?.loading || false;
+  
+  // Only check connection if data is loaded
+  const isYouTubeConnected = !isLoading && !!(user?.youtubeChannelId || user?.youtubeChannel?.id);
   const [channelId, setChannelId] = React.useState<string | null>(user?.youtubeChannelId || user?.youtubeChannel?.id || null);
 
   // setIsYouTubeConnected is now a no-op for compatibility
   const setIsYouTubeConnected = () => {};
 
   React.useEffect(() => {
-    setChannelId(user?.youtubeChannelId || user?.youtubeChannel?.id || null);
-  }, [user?.youtubeChannelId, user?.youtubeChannel?.id]);
+    if (!isLoading) {
+      setChannelId(user?.youtubeChannelId || user?.youtubeChannel?.id || null);
+    }
+  }, [user?.youtubeChannelId, user?.youtubeChannel?.id, isLoading]);
 
   return (
     <YouTubeContext.Provider value={{ isYouTubeConnected, setIsYouTubeConnected, channelId, setChannelId }}>

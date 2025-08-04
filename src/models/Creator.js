@@ -30,6 +30,9 @@ const creatorSchema = new mongoose.Schema({
   trialStart: { type: Date, default: Date.now },
   planExpiry: { type: Date },
   subscriptionId: { type: String }, // Razorpay subscription ID
+  // Password reset fields
+  passwordResetCode: { type: String },
+  passwordResetExpires: { type: Date },
 }, { collection: 'creators' });
 
 const Creator = (mongoose.models && mongoose.models.Creator)

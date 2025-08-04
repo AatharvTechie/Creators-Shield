@@ -1,37 +1,35 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ShieldBan, Trash2, Youtube, Instagram, Globe, ShieldCheck, Loader2 } from "lucide-react";
-import Link from 'next/link';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { useToast } from "@/hooks/use-toast";
+import { User } from '@/lib/types';
 import { suspendCreator, liftSuspension, deactivateCreator } from './actions';
-import type { User } from '@/lib/types';
-import { ClientFormattedDate } from '@/components/ui/client-formatted-date';
-import { SuspensionDialog } from '@/components/ui/suspension-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { 
+  AlertTriangle, 
+  Shield, 
+  UserCheck, 
+  UserX, 
+  Mail, 
+  Calendar, 
+  Globe, 
+  Smartphone,
+  Loader2,
+  CheckCircle,
+  XCircle
+} from 'lucide-react';
 
 
 const platformIcons = {
-    youtube: <Youtube className="h-6 w-6 text-red-500" />,
-    instagram: <Instagram className="h-6 w-6 text-pink-500" />,
-    web: <Globe className="h-6 w-6" />,
-    tiktok: <div className="h-6 w-6" /> // Placeholder for TikTok
+  youtube: <Globe className="h-6 w-6" />,
+  instagram: <Smartphone className="h-6 w-6" />,
+  tiktok: <Smartphone className="h-6 w-6" />,
+  web: <Globe className="h-6 w-6" />,
+  tiktok: <div className="h-6 w-6" /> // Placeholder for TikTok
 } as const;
-
 
 export default function DetailsClientPage({ initialUser }: { initialUser: User | undefined }) {
   const { toast } = useToast();
@@ -69,6 +67,9 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
       
       if (result && result.success) {
           toast({ title: "Action Successful", description: result.message });
+          
+          // Voice notification removed - future implementation
+          
           // Optimistically update the UI
           setUser(prev => prev ? { ...prev, status: newStatus } : undefined);
       } else {
@@ -83,183 +84,162 @@ export default function DetailsClientPage({ initialUser }: { initialUser: User |
     setSuspensionDialogOpen(true);
   };
 
-  const handleEmailSend = async (emailData: { subject: string; html: string }) => {
-    try {
-      const response = await fetch('/api/email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: user?.email,
-          subject: emailData.subject,
-          html: emailData.html,
-          from: process.env.SENDER_EMAIL || process.env.BREVO_SMTP_USERNAME
-        }),
-      });
-
-      const result = await response.json();
-      return result;
-    } catch (error) {
-      return { success: false, message: 'Failed to send email' };
-    }
-  };
-
-
   if (!user) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Creator Not Found</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>The requested creator could not be found.</p>
-          <Button asChild variant="link" className="px-0">
-            <Link href="/admin/users">Return to Creator Management</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading user details...</p>
+        </div>
+      </div>
     );
   }
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100"><CheckCircle className="h-3 w-3 mr-1" />Active</Badge>;
+      case 'suspended':
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100"><AlertTriangle className="h-3 w-3 mr-1" />Suspended</Badge>;
+      case 'deactivated':
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100"><XCircle className="h-3 w-3 mr-1" />Deactivated</Badge>;
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-20 w-20">
-            <AvatarImage src={user.avatar} data-ai-hint="profile picture" />
-            <AvatarFallback>{user.displayName?.substring(0, 2)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-2xl font-bold">{user.displayName}</h1>
-            <p className="text-muted-foreground">{user.email}</p>
-          </div>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/admin/users">Back to Creator List</Link>
-        </Button>
-      </div>
-      
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Creator Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Creator ID</span>
-              <span className="font-mono text-sm">{user.id}</span>
-            </div>
-            <Separator />
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Join Date</span>
-              <span>
-                {user.joinDate ? (
-                  <ClientFormattedDate dateString={user.joinDate} />
-                ) : (
-                  <span className="text-muted-foreground">Not available</span>
-                )}
-              </span>
-            </div>
-            {user.youtubeChannelId && (
-              <>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">YouTube Channel ID</span>
-                  <span className="font-mono text-sm">{user.youtubeChannelId}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">YouTube Channel</span>
-                  <Link 
-                    href={`https://youtube.com/channel/${user.youtubeChannelId}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline font-mono text-sm"
-                  >
-                    View Channel
-                  </Link>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Connected Platforms</CardTitle>
-          </CardHeader>
-          <CardContent className="flex gap-4">
-            {user.platformsConnected && user.platformsConnected.length > 0 ? user.platformsConnected.map(platform => (
-              <div key={platform} className="flex items-center gap-2 p-3 border rounded-md bg-muted/50">
-                {platformIcons[platform as keyof typeof platformIcons]}
-                <span className="capitalize">{platform}</span>
-              </div>
-            )) : <p className="text-muted-foreground">No platforms connected.</p>}
-          </CardContent>
-        </Card>
-      </div>
-
+      {/* User Header */}
       <Card>
         <CardHeader>
-          <CardTitle>Admin Actions</CardTitle>
-          <CardDescription>Perform administrative actions on this creator account.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-yellow-200/50 rounded-lg bg-yellow-50/10 dark:bg-yellow-500/10">
+          <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold">Suspend Creator</h3>
-              <p className="text-sm text-muted-foreground">
-                {user.status === 'suspended' 
-                  ? 'Creator is currently suspended and cannot login for 24 hours from suspension time.'
-                  : 'Temporarily disable account for 24 hours. Creator will see a warning dialog with countdown timer when trying to login.'
-                }
-              </p>
+              <CardTitle className="flex items-center gap-2">
+                <UserCheck className="h-5 w-5" />
+                {user.displayName || user.name || 'Unknown User'}
+              </CardTitle>
+              <CardDescription>{user.email}</CardDescription>
             </div>
-            {user.status === 'suspended' ? (
-                <Button variant="outline" onClick={() => handleAction('lift')} disabled={isLoading === 'lift'}>
-                    {isLoading === 'lift' ? <Loader2 className="mr-2 animate-spin" /> : <ShieldCheck className="mr-2" />}
-                    Lift Suspension
-                </Button>
-            ) : (
-                <Button variant="outline" onClick={() => handleSuspensionDialog('suspend')} disabled={isLoading === 'suspend' || user.status === 'deactivated'}>
-                    <ShieldBan className="mr-2" />
-                    Suspend with Email
-                </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {getStatusBadge(user.status)}
+            </div>
           </div>
-          <div className="flex items-center justify-between p-4 border-destructive/50 rounded-lg bg-destructive/10">
-            <div>
-              <h3 className="font-semibold text-destructive">Deactivate Creator</h3>
-              <p className="text-sm text-muted-foreground">This will log the creator out. They must request reactivation to log in again.</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Email:</span>
+                <span>{user.email}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Joined:</span>
+                <span>{new Date(user.createdAt).toLocaleDateString()}</span>
+              </div>
             </div>
-            <Button 
-              variant="destructive" 
-              onClick={() => handleSuspensionDialog('deactivate')}
-              disabled={isLoading === 'deactivate' || user.status === 'deactivated'}
-            >
-                    {user.status === 'deactivated' ? 'Deactivated' : (
-                        <>
-                        <Trash2 className="mr-2" />
-                        Deactivate with Email
-                        </>
-                    )}
-                </Button>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Shield className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">Status:</span>
+                <span className="capitalize">{user.status}</span>
+              </div>
+              {user.lastLogin && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">Last Login:</span>
+                  <span>{new Date(user.lastLogin).toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Suspension Dialog */}
-      {user && (
-        <SuspensionDialog
-          user={user}
-          action={suspensionAction}
-          onAction={handleAction}
-          onEmailSend={handleEmailSend}
-          isOpen={suspensionDialogOpen}
-          onOpenChange={setSuspensionDialogOpen}
-        />
+      {/* Connected Platforms */}
+      {user.connectedPlatforms && user.connectedPlatforms.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              Connected Platforms
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {user.connectedPlatforms.map((platform, index) => (
+                <Badge key={index} variant="outline" className="flex items-center gap-1">
+                  {platformIcons[platform as keyof typeof platformIcons] || <Globe className="h-3 w-3" />}
+                  {platform}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
+
+      {/* Admin Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Admin Actions
+          </CardTitle>
+          <CardDescription>
+            Manage user account status and permissions
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Suspend Button */}
+            <Button
+              onClick={() => handleAction('suspend')}
+              disabled={isLoading !== null || user.status === 'suspended'}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              {isLoading === 'suspend' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <AlertTriangle className="h-4 w-4" />
+              )}
+              Suspend (24h)
+            </Button>
+
+            {/* Lift Suspension Button */}
+            <Button
+              onClick={() => handleAction('lift')}
+              disabled={isLoading !== null || user.status !== 'suspended'}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              {isLoading === 'lift' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4" />
+              )}
+              Lift Suspension
+            </Button>
+
+            {/* Deactivate Button */}
+            <Button
+              onClick={() => handleAction('deactivate')}
+              disabled={isLoading !== null || user.status === 'deactivated'}
+              variant="destructive"
+              className="flex items-center gap-2"
+            >
+              {isLoading === 'deactivate' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <UserX className="h-4 w-4" />
+              )}
+              Deactivate
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

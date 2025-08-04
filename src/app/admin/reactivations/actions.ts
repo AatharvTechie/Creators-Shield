@@ -25,27 +25,26 @@ export async function approveReactivationRequest(creatorId: string) {
       approvalTime
     );
 
-    if (!emailResult.success) {
-      console.warn('⚠️ Email notification failed:', emailResult.message);
-    }
+    console.log('Reactivation approval email result:', emailResult);
 
-    revalidatePath('/admin/reactivations');
-    revalidatePath('/admin/users');
-    revalidatePath(`/admin/users/${creatorId}`);
-    return { 
-      success: true, 
-      message: 'Reactivation request approved. Email notification sent.' 
+    return {
+      success: true,
+      message: `Reactivation request approved for ${creator.displayName || creator.name}.`,
+      emailSent: emailResult.success,
+      action: 'reactivation-approved'
     };
-  } catch(error) {
-    console.error('❌ Reactivation approval error:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : "An unknown error occurred." 
+
+  } catch (error: any) {
+    console.error('Approve reactivation error:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to approve reactivation request',
+      action: 'reactivation-approved'
     };
   }
 }
 
-export async function rejectReactivationRequest(creatorId: string) {
+export async function rejectReactivationRequest(creatorId: string, reason?: string) {
   try {
     // Get creator details before rejection
     const creator = await getUserById(creatorId);
@@ -65,22 +64,21 @@ export async function rejectReactivationRequest(creatorId: string) {
       rejectionTime
     );
 
-    if (!emailResult.success) {
-      console.warn('⚠️ Email notification failed:', emailResult.message);
-    }
+    console.log('Reactivation rejection email result:', emailResult);
 
-    revalidatePath('/admin/reactivations');
-    revalidatePath('/admin/users');
-    revalidatePath(`/admin/users/${creatorId}`);
-    return { 
-      success: true, 
-      message: 'Reactivation request rejected. Email notification sent.' 
+    return {
+      success: true,
+      message: `Reactivation request rejected for ${creator.displayName || creator.name}.`,
+      emailSent: emailResult.success,
+      action: 'reactivation-rejected'
     };
-  } catch(error) {
-    console.error('❌ Reactivation rejection error:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : "An unknown error occurred." 
+
+  } catch (error: any) {
+    console.error('Reject reactivation error:', error);
+    return {
+      success: false,
+      message: error.message || 'Failed to reject reactivation request',
+      action: 'reactivation-rejected'
     };
   }
 }

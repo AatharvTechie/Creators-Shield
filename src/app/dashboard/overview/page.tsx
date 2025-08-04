@@ -5,6 +5,7 @@ import { useDashboardData } from '../dashboard-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AdvancedLoader, DataLoader } from '@/components/ui/advanced-loader';
 
 import { Progress } from '@/components/ui/progress';
 import { 
@@ -97,11 +98,14 @@ export default function OverviewPage() {
   if (!user) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading dashboard...</p>
-            </div>
-        </div>
+        <DataLoader 
+          size="lg"
+          text="Loading your dashboard..."
+          subtext="Preparing your workspace and data"
+          showProgress={true}
+          progress={75}
+        />
+      </div>
     );
 }
 

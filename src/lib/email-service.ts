@@ -16,10 +16,72 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  try {
+    // Check if Brevo credentials are configured
+    const emailConfig = checkEmailConfiguration();
+    if (!emailConfig.isConfigured) {
+      console.warn('⚠️ Email configuration incomplete. Missing:', emailConfig.missingFields.join(', '));
+      console.log(getEmailSetupInstructions());
+      return {
+        success: false,
+        message: `Brevo SMTP credentials not configured - Missing: ${emailConfig.missingFields.join(', ')}`,
+        provider: 'None',
+        timestamp: new Date().toISOString()
+      };
+    }
+
+    console.log(`📧 Sending email to: ${to}`);
+
+    // Send email using Brevo SMTP
+    const result = await transporter.sendMail({
+      from: process.env.SENDER_EMAIL || process.env.BREVO_SMTP_USERNAME,
+      to,
+      subject,
+      html
+    });
+
+    console.log(`✅ Email sent successfully to: ${to}`);
+    console.log(`📧 Message ID: ${result.messageId}`);
+
+    return {
+      success: true,
+      message: 'Email sent successfully via Brevo SMTP',
+      messageId: result.messageId,
+      provider: 'Brevo',
+      timestamp: new Date().toISOString()
+    };
+
+  } catch (error: any) {
+    console.error(`❌ Failed to send email to ${to}`, error.message);
+    
+    // Check if it's a credentials error
+    if (error.message.includes('Invalid login') || error.message.includes('Authentication failed')) {
+      return {
+        success: false,
+        message: 'Brevo SMTP credentials not configured or invalid',
+        provider: 'Brevo',
+        timestamp: new Date().toISOString()
+      };
+    }
+    
+    // Don't throw error, just log it and return failure
+    return {
+      success: false,
+      message: `Email sending failed: ${error.message}`,
+      provider: 'Brevo',
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
 export async function sendCreatorNotification(
   creatorEmail: string,
   creatorName: string,
-  action: 'suspend' | 'deactivate' | 'lift-suspension' | 'reactivation-approved' | 'reactivation-rejected',
+  action: 'suspend' | 'deactivate' | 'lift-suspension' | 'reactivation-approved' | 'reactivation-rejected' | 
+         'mark-as-read' | 'disconnect-approved' | 'disconnect-denied' | 'platform-connected' | '2fa-setup' |
+         'new-device-login' | 'subscription-activated' | 'copyright-match' | 'weekly-report' | 'promotional' |
+         'feature-update' | 'welcome' | 'test',
   timestamp?: string
 ) {
   try {
@@ -42,7 +104,25 @@ export async function sendCreatorNotification(
         emailData = emailTemplates.reactivationRejected(creatorName, timestamp || new Date().toLocaleString());
         break;
       default:
-        throw new Error('Invalid action type');
+        // For other actions, use a generic template
+        emailData = {
+          subject: `Creator Shield Notification - ${action}`,
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <title>Creator Shield Notification</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; padding: 20px;">
+              <h2>Hello ${creatorName},</h2>
+              <p>This is a notification from Creator Shield regarding: ${action}</p>
+              <p>Time: ${timestamp || new Date().toLocaleString()}</p>
+              <p>Thank you for using Creator Shield!</p>
+            </body>
+            </html>
+          `
+        };
     }
 
     // Check if Brevo credentials are configured
@@ -52,7 +132,7 @@ export async function sendCreatorNotification(
       console.log(getEmailSetupInstructions());
       return {
         success: false,
-        message: `Email notification skipped - Missing configuration: ${emailConfig.missingFields.join(', ')}`,
+        message: `Brevo SMTP credentials not configured - Missing: ${emailConfig.missingFields.join(', ')}`,
         provider: 'None',
         timestamp: new Date().toISOString()
       };
@@ -71,6 +151,9 @@ export async function sendCreatorNotification(
     console.log(`✅ Email sent successfully to: ${creatorEmail}`);
     console.log(`📧 Message ID: ${result.messageId}`);
 
+    // Voice notifications are handled on the client side
+    // Server-side voice notification removed
+
     return {
       success: true,
       message: 'Email sent successfully via Brevo SMTP',
@@ -81,6 +164,16 @@ export async function sendCreatorNotification(
 
   } catch (error: any) {
     console.error(`❌ Failed to send email to ${creatorEmail} for action: ${action}`, error.message);
+    
+    // Check if it's a credentials error
+    if (error.message.includes('Invalid login') || error.message.includes('Authentication failed')) {
+      return {
+        success: false,
+        message: 'Brevo SMTP credentials not configured or invalid',
+        provider: 'Brevo',
+        timestamp: new Date().toISOString()
+      };
+    }
     
     // Don't throw error, just log it and return failure
     return {

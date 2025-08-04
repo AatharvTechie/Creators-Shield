@@ -32,6 +32,19 @@ export function useSuspensionCheck() {
         body: JSON.stringify({ token }),
       });
 
+      if (!response.ok) {
+        console.log('Suspension check failed:', response.status);
+        setSuspensionStatus({
+          isSuspended: false,
+          timeRemaining: null,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+          message: '',
+        });
+        return;
+      }
+
       const data = await response.json();
       
       if (data.isSuspended) {
@@ -55,7 +68,8 @@ export function useSuspensionCheck() {
       }
     } catch (error) {
       console.error('Error checking suspension status:', error);
-      setSuspensionStatus(null);
+      // Don't set suspension status to null on error, just log it
+      // This prevents the UI from breaking when there are network issues
     } finally {
       setLoading(false);
     }

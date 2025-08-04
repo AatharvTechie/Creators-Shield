@@ -8,6 +8,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // Extract creator name from email
+    const creatorName = userEmail.split('@')[0];
+
     // Email template
     const emailHtml = `
       <!DOCTYPE html>
@@ -106,7 +109,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to send email via Brevo' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: 'Email sent successfully via Brevo' });
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Email sent successfully via Brevo',
+      creatorName,
+      action: 'new_device_login'
+    });
   } catch (error) {
     console.error('Error sending new device email:', error);
     return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });

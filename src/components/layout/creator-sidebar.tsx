@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useDashboardData } from "@/app/dashboard/dashboard-context";
 import { useYouTube } from "@/context/youtube-context";
+import { AdvancedLoader } from "@/components/ui/advanced-loader";
 import {
   Home, 
   Activity, 
@@ -35,6 +36,7 @@ export function CreatorSidebar() {
   const router = useRouter();
 
   const user = dashboardData?.user;
+  const isLoading = dashboardData?.loading || false;
   const creatorName = user?.youtubeChannel?.title || user?.displayName || user?.name || 'Creator';
   const avatar = user?.youtubeChannel?.thumbnail || user?.avatar || "https://placehold.co/128x128.png";
   const avatarFallback = creatorName ? creatorName.charAt(0) : 'C';
@@ -140,7 +142,8 @@ export function CreatorSidebar() {
   const userPlan = user?.plan || 'free';
   
   // Check if user can access features that require YouTube connection
-  const canAccessYouTubeFeatures = isYouTubeConnected;
+  // Only check this if data is loaded and user is connected
+  const canAccessYouTubeFeatures = !isLoading && isYouTubeConnected;
   
   return (
          <Sidebar className="w-full sm:w-56 lg:w-60 xl:w-64">
@@ -168,30 +171,51 @@ export function CreatorSidebar() {
          </div>
        </SidebarHeader>
                            <SidebarContent className="sidebar-scrollbar px-3 mt-6">
-          <SidebarMenu className="gap-3">
-          {/* Main Menu Items */}
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            const isDisabled = item.requiresConnection && !canAccessYouTubeFeatures;
+          {isLoading ? (
+            <div className="space-y-4">
+              <AdvancedLoader 
+                type="data" 
+                size="sm" 
+                text="Loading dashboard..." 
+                subtext="Preparing your workspace"
+                className="mx-2"
+              />
+              {/* Show skeleton menu items while loading */}
+              <div className="space-y-2">
+                {menuItems.map((item, index) => (
+                  <div key={item.href} className="flex items-center gap-3 py-3 px-4 rounded-lg bg-muted/20 animate-pulse">
+                    <div className="h-4 w-4 bg-muted rounded" />
+                    <div className="h-4 bg-muted rounded flex-1" style={{ width: `${Math.random() * 60 + 40}%` }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <SidebarMenu className="gap-3">
+            {/* Main Menu Items */}
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              const isDisabled = item.requiresConnection && !canAccessYouTubeFeatures;
 
-            return (
-              <SidebarMenuItem key={item.href}>
-                                 <SidebarMenuButton asChild isActive={isActive} disabled={isDisabled} className="text-xs transition-all duration-200 hover:bg-sidebar-accent hover:scale-105">
-                                      <NextLink href={isDisabled ? '#' : item.href} className="flex items-center gap-3 py-3 px-4 rounded-lg">
-                                          <Icon className="h-4 w-4 flex-shrink-0" />
-                      <span className="truncate text-sm font-medium">{item.label}</span>
-                     {isDisabled && <Lock className="h-3 w-3 ml-auto text-muted-foreground flex-shrink-0" />}
-                     {item.href === '/dashboard/feedback' && hasUnread && (
-                       <Badge variant="destructive" className="ml-auto h-1.5 w-1.5 rounded-full p-0 flex-shrink-0" />
-                     )}
-                   </NextLink>
-                 </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-      </SidebarContent>
+              return (
+                <SidebarMenuItem key={item.href}>
+                                   <SidebarMenuButton asChild isActive={isActive} disabled={isDisabled} className="text-xs transition-all duration-200 hover:bg-sidebar-accent hover:scale-105">
+                                        <NextLink href={isDisabled ? '#' : item.href} className="flex items-center gap-3 py-3 px-4 rounded-lg">
+                                            <Icon className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate text-sm font-medium">{item.label}</span>
+                       {isDisabled && <Lock className="h-3 w-3 ml-auto text-muted-foreground flex-shrink-0" />}
+                       {item.href === '/dashboard/feedback' && hasUnread && (
+                         <Badge variant="destructive" className="ml-auto h-1.5 w-1.5 rounded-full p-0 flex-shrink-0" />
+                       )}
+                     </NextLink>
+                   </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+          )}
+        </SidebarContent>
                            <SidebarFooter className="border-t border-gray-700 p-2 mt-4">
           <SidebarMenuButton asChild className="text-xs transition-colors duration-200 hover:bg-sidebar-accent">
             <NextLink href="/dashboard/settings" className="flex items-center gap-2 py-2 px-2 rounded-md">

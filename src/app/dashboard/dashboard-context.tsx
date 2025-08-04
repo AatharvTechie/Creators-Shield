@@ -62,11 +62,8 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
           return;
         }
 
-        // Check if data is already loaded and user hasn't logged out
-        if (user && !loading) {
-          console.log('✅ Data already loaded, skipping fetch');
-          return;
-        }
+        // Always fetch data on mount to ensure fresh state
+        console.log('🔄 Fetching fresh dashboard data...');
 
         // Create session for device tracking when dashboard loads
         try {

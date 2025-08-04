@@ -10,6 +10,8 @@ import { I18nextProvider } from 'react-i18next';
 import i18n from '@/lib/i18n';
 import { DashboardDataProvider } from '@/app/dashboard/dashboard-context';
 import { AuthProvider } from '@/context/auth-context';
+import { AudioNotificationProvider } from '@/components/ui/audio-notification';
+import { VoiceAlertProvider } from '@/components/voice-alert';
 
 export function Providers({ children, ...props }: ThemeProviderProps) {
   return (
@@ -23,8 +25,12 @@ export function Providers({ children, ...props }: ThemeProviderProps) {
           <DashboardDataProvider>
             <YouTubeProvider>
               <I18nextProvider i18n={i18n}>
-                {children}
-                <Toaster />
+                <AudioNotificationProvider>
+                  <VoiceAlertProvider>
+                    {children}
+                    <Toaster />
+                  </VoiceAlertProvider>
+                </AudioNotificationProvider>
               </I18nextProvider>
             </YouTubeProvider>
           </DashboardDataProvider>

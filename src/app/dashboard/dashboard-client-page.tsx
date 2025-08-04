@@ -12,11 +12,20 @@ import { ClientFormattedDate } from "@/components/ui/client-formatted-date";
 import { useAuth } from '@/context/auth-context';
 import { InteractiveLoader, AutoConnectLoader, MultiStageLoader } from '@/components/ui/loader';
 import { useDashboardData } from './dashboard-context';
+import { useEffect } from 'react';
+import { checkAndPlayPendingNotifications } from '@/lib/audio-notification-utils';
 
 export default function DashboardClientPage({ initialData }: { initialData: DashboardData | null }) {
     const { user, loading: authLoading } = useAuth();
     const { activity, autoConnecting, loading: dashboardLoading } = useDashboardData();
     const isLoading = authLoading && !initialData;
+
+    // Check for pending audio notifications when dashboard loads
+    useEffect(() => {
+        if (user && !dashboardLoading) {
+            checkAndPlayPendingNotifications();
+        }
+    }, [user, dashboardLoading]);
 
     // Show auto-connect loader when connecting channels
     if (autoConnecting) {
