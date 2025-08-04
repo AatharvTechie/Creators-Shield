@@ -166,7 +166,7 @@ export async function submitReactivationRequest(userId: string, reason: string, 
     // Try to find user by email from JWT token
     try {
       // Get token from request headers
-      const authHeader = req?.headers?.authorization;
+      const authHeader = req?.headers?.get?.('authorization');
       if (authHeader) {
         const token = authHeader.replace('Bearer ', '');
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -381,39 +381,56 @@ export async function checkApprovalStatus(userId: string) {
 }
 
 export async function getReactivationRequests() {
-  await connectToDatabase();
-  
-  console.log('🔍 Fetching reactivation requests from Reactivation collection');
-  
-  // Get all pending reactivation requests from Reactivation collection
-  // @ts-ignore
-  const reactivationRequests = await Reactivation.find({ status: 'pending' }).lean();
-  
-  console.log('🔍 Found reactivation requests:', reactivationRequests.length);
-  reactivationRequests.forEach((request: any, index: number) => {
-    console.log(`📝 Reactivation Request ${index + 1}:`, {
-      id: request._id.toString(),
-      creatorId: request.creatorId.toString(),
-      displayName: request.displayName,
-      email: request.email,
-      requestDate: request.requestDate,
-      reason: request.reason,
-      explanation: request.explanation,
-      status: request.status
+  try {
+    await connectToDatabase();
+    
+    console.log('🔍 Fetching reactivation requests from Reactivation collection');
+    
+    // Check if Reactivation model exists
+    if (!Reactivation) {
+      console.log('⚠️ Reactivation model not found');
+      return [];
+    }
+    
+    // Get all pending reactivation requests from Reactivation collection
+    // @ts-ignore
+    const reactivationRequests = await Reactivation.find({ status: 'pending' }).lean();
+    
+    console.log('🔍 Found reactivation requests:', reactivationRequests?.length || 0);
+    
+    if (!reactivationRequests || !Array.isArray(reactivationRequests)) {
+      console.log('⚠️ No reactivation requests found or invalid data');
+      return [];
+    }
+    
+    reactivationRequests.forEach((request: any, index: number) => {
+      console.log(`📝 Reactivation Request ${index + 1}:`, {
+        id: request._id?.toString(),
+        creatorId: request.creatorId?.toString(),
+        displayName: request.displayName,
+        email: request.email,
+        requestDate: request.requestDate,
+        reason: request.reason,
+        explanation: request.explanation,
+        status: request.status
+      });
     });
-  });
-  
-  return reactivationRequests.map((request: any) => ({
-    id: request._id.toString(),
-    name: request.displayName,
-    email: request.email,
-    requestedAt: request.requestDate ? 
-      new Date(request.requestDate).toISOString() : 
-      new Date().toISOString(),
-    reason: request.reason || 'No reason provided',
-    explanation: request.explanation || 'No explanation provided',
-    creatorId: request.creatorId.toString()
-  }));
+    
+    return reactivationRequests.map((request: any) => ({
+      id: request._id?.toString() || '',
+      name: request.displayName || 'Unknown',
+      email: request.email || '',
+      requestedAt: request.requestDate ? 
+        new Date(request.requestDate).toISOString() : 
+        new Date().toISOString(),
+      reason: request.reason || 'No reason provided',
+      explanation: request.explanation || 'No explanation provided',
+      creatorId: request.creatorId?.toString() || ''
+    }));
+  } catch (error) {
+    console.error('❌ Error fetching reactivation requests:', error);
+    return [];
+  }
 }
 
 export async function updateUser(userId: string, update: Partial<any>) {
