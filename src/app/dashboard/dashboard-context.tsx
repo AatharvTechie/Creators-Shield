@@ -102,15 +102,21 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
             setAnalytics(dashboardData.analytics);
             setActivity(dashboardData.activity || []);
             
-            // Update usage stats based on user data
-            const userData = dashboardData.user;
-            setUsageStats({
-              youtubeChannels: userData?.youtubeChannelId ? 1 : 0,
-              videosMonitored: 0, // You can update this based on actual data
-              violationDetections: 0, // You can update this based on actual data
-              dmcaRequests: 0, // You can update this based on actual data
-              platformsConnected: userData?.platformsConnected?.length || 0
-            });
+            // Use real usage stats from API
+            if (dashboardData.usageStats) {
+              setUsageStats(dashboardData.usageStats);
+              console.log('📊 Real usage stats loaded:', dashboardData.usageStats);
+            } else {
+              // Fallback to calculated stats
+              const userData = dashboardData.user;
+              setUsageStats({
+                youtubeChannels: userData?.youtubeChannelId ? 1 : 0,
+                videosMonitored: 0,
+                violationDetections: 0,
+                dmcaRequests: 0,
+                platformsConnected: userData?.platformsConnected?.length || 0
+              });
+            }
 
             // Fetch platform status
             try {

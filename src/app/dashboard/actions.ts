@@ -7,6 +7,8 @@ import { subDays, format } from 'date-fns';
 import { getUserById, getUserByEmail } from '@/lib/users-store';
 import { revalidatePath } from 'next/cache';
 import { getViolationsForUser } from '@/lib/violations-store';
+import { getReportsForUser } from '@/lib/reports-store';
+import { getScansForUser } from '@/lib/web-scans-store';
 import { getChannelStats, getMostViewedVideo } from '@/lib/services/youtube-service';
 
 /**
@@ -38,8 +40,27 @@ export async function getDashboardData(userEmail?: string): Promise<DashboardDat
     let mostViewed: any = null;
     let violations: Violation[] = [];
     
-    // Always fetch violations first
-    violations = await getViolationsForUser(dbUser.id);
+    // Fetch all user data in parallel for better performance
+    const [violationsResult, reportsResult, scansResult] = await Promise.all([
+      getViolationsForUser(dbUser.id),
+      getReportsForUser(dbUser.id),
+      getScansForUser(dbUser.id)
+    ]);
+    
+    violations = violationsResult;
+    const reports = reportsResult;
+    const scans = scansResult;
+    
+    // Calculate real usage stats from actual data
+    const usageStats = {
+      youtubeChannels: dbUser.youtubeChannelId ? 1 : 0,
+      videosMonitored: scans.length, // Count of all scans (monitored videos)
+      violationDetections: violations.length, // Count of all violations detected
+      dmcaRequests: reports.length, // Count of all DMCA reports submitted
+      platformsConnected: dbUser.platformsConnected?.length || 0
+    };
+    
+    console.log('📊 Real usage stats calculated:', usageStats);
     
     if (channelId) {
         try {
@@ -134,11 +155,18 @@ export async function getDashboardData(userEmail?: string): Promise<DashboardDat
       analytics: userAnalytics, 
       activity: activity, 
       user: dbUser,
+      usageStats: usageStats, // Include real usage stats
     };
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
     if (dbUser) {
-        return { analytics: null, activity: [], user: dbUser };
+        return { analytics: null, activity: [], user: dbUser, usageStats: {
+          youtubeChannels: dbUser.youtubeChannelId ? 1 : 0,
+          videosMonitored: 0,
+          violationDetections: 0,
+          dmcaRequests: 0,
+          platformsConnected: dbUser.platformsConnected?.length || 0
+        }};
     }
     return null;
   }

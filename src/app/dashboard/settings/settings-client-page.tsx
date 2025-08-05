@@ -5,7 +5,7 @@ import * as React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ThemeSettings } from "@/components/settings/theme-settings";
-import { Youtube, Loader2, LogOut, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Youtube, Instagram, Loader2, LogOut, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useYouTube } from "@/context/youtube-context";
 import { Input } from "@/components/ui/input";

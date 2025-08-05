@@ -38,9 +38,9 @@ interface YouTubeData {
 }
 
 export default function OverviewPage() {
-  const { user, usageStats, planFeatures, platformStatus } = useDashboardData();
+  const { user, usageStats, planFeatures, platformStatus, loading } = useDashboardData();
   const [youtubeData, setYoutubeData] = useState<YouTubeData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loadingYouTube, setLoadingYouTube] = useState(false);
   
   const hasYouTubeChannel = user?.youtubeChannel && user.youtubeChannel.id;
   const activePlatform = platformStatus?.activePlatform;
@@ -51,12 +51,12 @@ export default function OverviewPage() {
       if (!hasYouTubeChannel || !user?.email) return;
       
       // Check if data is already loaded
-      if (youtubeData && !loading) {
+      if (youtubeData && !loadingYouTube) {
         console.log('✅ YouTube data already loaded, skipping fetch');
         return;
       }
       
-      setLoading(true);
+      setLoadingYouTube(true);
       try {
         const channelId = user.youtubeChannel?.id || user.youtubeChannelId;
         if (!channelId) return;
@@ -86,16 +86,16 @@ export default function OverviewPage() {
              } catch (error) {
          console.error('Error fetching YouTube data:', error);
        } finally {
-         setLoading(false);
+         setLoadingYouTube(false);
        }
        
        console.log('YouTube data fetch completed. Data:', youtubeData);
     };
 
     fetchYouTubeData();
-  }, [hasYouTubeChannel, user?.email, user?.youtubeChannel?.id, user?.youtubeChannelId, youtubeData, loading]);
+  }, [hasYouTubeChannel, user?.email, user?.youtubeChannel?.id, user?.youtubeChannelId, youtubeData, loadingYouTube]);
   
-  if (!user) {
+  if (loading || !user) {
     return (
       <div className="flex items-center justify-center h-64">
         <DataLoader 
@@ -185,7 +185,7 @@ export default function OverviewPage() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-lg font-semibold text-white">
-                {loading ? (
+                {loadingYouTube ? (
                   <div className="animate-pulse bg-gray-600 h-5 w-14 rounded"></div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   (youtubeData.subscribers === 0 ? (
@@ -217,7 +217,7 @@ export default function OverviewPage() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-lg font-semibold text-white">
-                {loading ? (
+                {loadingYouTube ? (
                   <div className="animate-pulse bg-gray-600 h-5 w-14 rounded"></div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   formatNumber(youtubeData.views) : 
@@ -242,7 +242,7 @@ export default function OverviewPage() {
             </CardHeader>
             <CardContent className="pt-0">
               <div className="text-xs font-medium text-white truncate">
-                {loading ? (
+                {loadingYouTube ? (
                   <div className="animate-pulse bg-gray-600 h-3 w-20 rounded"></div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   youtubeData.mostViewedVideo.title : 
@@ -251,7 +251,7 @@ export default function OverviewPage() {
                 }
               </div>
               <div className="text-xs text-gray-400 mt-0.5">
-                {loading ? (
+                {loadingYouTube ? (
                   <div className="animate-pulse bg-gray-600 h-2.5 w-10 rounded"></div>
                 ) : activePlatform === 'youtube' && youtubeData ? 
                   `${formatNumber(youtubeData.mostViewedVideo.views)} views` : 

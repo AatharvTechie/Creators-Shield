@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { PlanCard } from '@/components/settings/plan-card';
 import { AdvancedLoader, DataLoader } from '@/components/ui/advanced-loader';
-import { Crown, Lock, Download, Trash2, RefreshCcw, AlertTriangle, Shield, Loader2 } from 'lucide-react';
+import { Crown, Lock, Download, Trash2, RefreshCcw, AlertTriangle, Shield, Loader2, Youtube, Instagram, Settings } from 'lucide-react';
 import { useDeviceDetection } from '@/hooks/use-device-detection';
 import { startSessionMonitoring, stopSessionMonitoring } from '@/lib/session-monitor';
 
@@ -74,6 +74,7 @@ export default function SettingsPage() {
   const [logoutLoading, setLogoutLoading] = useState<string | null>(null); // Track which device is being logged out
   const [showLogoutWarning, setShowLogoutWarning] = useState(false);
   const [deviceToLogout, setDeviceToLogout] = useState<any>(null);
+  const [showYouTubeManageDialog, setShowYouTubeManageDialog] = useState(false);
 
   // Track if we've already loaded devices initially
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
@@ -1285,24 +1286,47 @@ Report Version: 1.0
                     <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">YT</span>
-                      </div>
+                  <Youtube className="w-6 h-6 text-white" />
+                </div>
                 <div>
                   <p className="font-medium">YouTube</p>
                   <p className="text-sm text-muted-foreground">
                     {user?.youtubeChannel ? 'Connected' : 'Not connected'}
                   </p>
+                  {user?.youtubeChannel && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <Youtube className="w-4 h-4 text-red-500" />
+                      <span className="text-xs text-muted-foreground">{user.youtubeChannel.title}</span>
+                    </div>
+                  )}
                 </div>
                       </div>
-              <Button variant="outline" size="sm">
-                {user?.youtubeChannel ? 'Manage' : 'Connect'}
-              </Button>
+              <div className="flex gap-2">
+                {user?.youtubeChannel ? (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowYouTubeManageDialog(true)}
+                    >
+                      Manage
+                    </Button>
+                    <Button variant="destructive" size="sm">
+                      Disconnect
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="outline" size="sm">
+                    Connect
+                  </Button>
+                )}
+              </div>
                     </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-pink-500 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">IG</span>
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                  <Instagram className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="font-medium">Instagram</p>
@@ -1949,6 +1973,73 @@ Report Version: 1.0
             <AlertDialogAction onClick={confirmDeviceLogout} className="bg-red-600 hover:bg-red-700">
               Logout
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* YouTube Manage Dialog */}
+      <AlertDialog open={showYouTubeManageDialog} onOpenChange={setShowYouTubeManageDialog}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Youtube className="h-5 w-5 text-red-500" />
+              Manage YouTube Channel
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Manage your connected YouTube channel settings and view channel information.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {user?.youtubeChannel && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-3 bg-muted/20 rounded-lg">
+                  <Youtube className="w-8 h-8 text-red-500" />
+                  <div>
+                    <p className="font-medium">{user.youtubeChannel.title}</p>
+                    <p className="text-sm text-muted-foreground">Channel ID: {user.youtubeChannel.id}</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Channel Status:</span>
+                    <Badge variant="default" className="bg-green-500">Connected</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Connected Since:</span>
+                    <span className="text-sm">Recently</span>
+                  </div>
+                </div>
+                
+                <div className="pt-3 border-t">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Channel management options:
+                  </p>
+                  <div className="space-y-2">
+                    <Button variant="outline" size="sm" className="w-full justify-start">
+                      <Youtube className="w-4 h-4 mr-2" />
+                      View Channel Analytics
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full justify-start">
+                      <RefreshCcw className="w-4 h-4 mr-2" />
+                      Refresh Channel Data
+                    </Button>
+                    <Button variant="outline" size="sm" className="w-full justify-start">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Channel Settings
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+            <Button variant="destructive" size="sm">
+              Disconnect Channel
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

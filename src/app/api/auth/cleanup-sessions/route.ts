@@ -1,87 +1,108 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Session from '@/models/Session';
-import Creator from '@/models/Creator';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userEmail } = await request.json();
+    const token = request.headers.get('authorization')?.replace('Bearer ', '');
     
-    if (!userEmail) {
+    if (!token) {
       return NextResponse.json(
-        { success: false, message: 'Missing user email' },
+        { error: 'No token provided' },
         { status: 400 }
       );
     }
 
     await connectToDatabase();
     
-    // Get user ID using Creator model
-    const user = await Creator.findOne({ email: userEmail });
-    if (!user) {
+    // Decode JWT
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET) as any;
+    } catch (jwtError) {
       return NextResponse.json(
-        { success: false, message: 'User not found' },
-        { status: 404 }
+        { error: 'Invalid JWT token' },
+        { status: 401 }
       );
     }
-
-    // 1. Remove expired sessions using Session model
-    const expiredSessions = await Session.deleteMany({
-      user: user._id,
-      expiresAt: { $lt: new Date() }
+    
+    const userId = decoded.id;
+    const sessionId = decoded.sessionId;
+    
+    console.log('🧹 Cleaning up sessions for user:', userId);
+    
+    // Mark all sessions for this user as not current
+    await Session.updateMany(
+      { user: userId },
+      { isCurrentSession: false }
+    );
+    
+    // Mark expired sessions as inactive
+    await Session.updateMany(
+      { 
+        user: userId,
+        expiresAt: { $lt: new Date() }
+      },
+      { isActive: false }
+    );
+    
+    // Create or update current session
+    let currentSession = await Session.findOne({ 
+      user: userId,
+      sessionId: sessionId
     });
-
-    console.log(`🧹 Removed ${expiredSessions.deletedCount} expired sessions for user ${userEmail}`);
-
-    // 2. Ensure only one session per device (keep the most recent)
-    const sessions = await Session.find({
-      user: user._id,
+    
+    if (currentSession) {
+      // Update existing session
+      await Session.updateOne(
+        { _id: currentSession._id },
+        {
+          $set: {
+            isCurrentSession: true,
+            isActive: true,
+            lastActive: new Date(),
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+          }
+        }
+      );
+      console.log('✅ Updated existing session');
+    } else {
+      // Create new session
+      await Session.create({
+        user: userId,
+        sessionId: sessionId,
+        isCurrentSession: true,
+        isActive: true,
+        lastActive: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+      });
+      console.log('✅ Created new session');
+    }
+    
+    // Get cleanup results
+    const activeSessions = await Session.find({ 
+      user: userId,
+      isActive: { $ne: false },
       expiresAt: { $gt: new Date() }
     }).lean();
-
-    // Group sessions by device
-    const deviceGroups = {};
-    sessions.forEach(session => {
-      const deviceKey = `${session.device}-${session.browser}-${session.os}`;
-      if (!deviceGroups[deviceKey]) {
-        deviceGroups[deviceKey] = [];
-      }
-      deviceGroups[deviceKey].push(session);
-    });
-
-    // Keep only the most recent session per device
-    let removedDuplicates = 0;
-    for (const deviceKey in deviceGroups) {
-      const deviceSessions = deviceGroups[deviceKey];
-      if (deviceSessions.length > 1) {
-        // Sort by lastActive (most recent first)
-        deviceSessions.sort((a, b) => new Date(b.lastActive) - new Date(a.lastActive));
-        
-        // Keep the most recent, remove others
-        const sessionsToRemove = deviceSessions.slice(1);
-        const sessionIdsToRemove = sessionsToRemove.map(s => s._id);
-        
-        await Session.deleteMany({
-          _id: { $in: sessionIdsToRemove }
-        });
-        
-        removedDuplicates += sessionsToRemove.length;
-      }
-    }
-
-    console.log(`🧹 Removed ${removedDuplicates} duplicate sessions for user ${userEmail}`);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Sessions cleaned up successfully',
-      removedExpired: expiredSessions.deletedCount,
-      removedDuplicates: removedDuplicates
-    });
-
+    
+    const cleanupResult = {
+      message: 'Session cleanup completed',
+      activeSessions: activeSessions.length,
+      currentSessionId: sessionId
+    };
+    
+    console.log('🧹 Cleanup result:', cleanupResult);
+    
+    return NextResponse.json(cleanupResult);
+    
   } catch (error) {
-    console.error('Session cleanup error:', error);
+    console.error('Error cleaning up sessions:', error);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

@@ -5,7 +5,6 @@ import * as React from 'react';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useDashboardData } from '@/app/dashboard/dashboard-context';
 import { useAdminProfile } from '@/app/admin/profile-context';
@@ -48,35 +47,6 @@ export function DashboardHeader({ title, admin = false }: { title?: string, admi
     }
   }, [avatar]);
 
-  const handleSignOut = async () => {
-    try {
-      // Call logout API to clear cookies
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      // Clear localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('creator_jwt');
-        localStorage.removeItem('admin_jwt');
-      }
-      
-      // Redirect to login
-      router.push('/auth/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Still redirect even if API call fails
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('creator_jwt');
-        localStorage.removeItem('admin_jwt');
-      }
-      router.push('/auth/login');
-    }
-  };
-
   return (
     <header className="p-2 sm:p-3 md:p-4 border-b flex items-center gap-2 sm:gap-3 md:gap-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 transition-all duration-300">
       {/* Mobile Navigation - Only show on mobile */}
@@ -108,31 +78,6 @@ export function DashboardHeader({ title, admin = false }: { title?: string, admi
       
       {/* Spacer */}
       <div className="flex-1" />
-      
-      {/* Responsive Actions */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Sign Out Button - Responsive */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleSignOut}
-          className="hidden sm:flex items-center gap-2 text-xs sm:text-sm touch-target"
-        >
-          <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
-          <span className="hidden md:inline">Sign Out</span>
-        </Button>
-        
-        {/* Mobile Sign Out Icon */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleSignOut}
-          className="sm:hidden touch-target"
-          title="Sign Out"
-        >
-          <LogOut className="h-4 w-4" />
-        </Button>
-      </div>
     </header>
   );
 }

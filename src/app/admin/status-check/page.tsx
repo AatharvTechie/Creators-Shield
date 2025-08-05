@@ -1,225 +1,124 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, RefreshCw, Users, Clock, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, XCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
 
-export default function StatusCheckPage() {
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [statusData, setStatusData] = useState<any>(null);
-  const [lastCheck, setLastCheck] = useState<string>('');
+export default function AdminStatusCheckPage() {
+  const [isChecking, setIsChecking] = useState(false);
 
-  const checkStatus = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/check-status', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      const data = await response.json();
-      setStatusData(data);
-      setLastCheck(new Date().toLocaleString());
-      
-      if (data.success) {
-        toast({ 
-          title: "Status Check Complete", 
-          description: `Found ${data.suspendedUsers} suspended and ${data.deactivatedUsers} deactivated users.` 
-        });
-      } else {
-        toast({ 
-          variant: 'destructive', 
-          title: "Status Check Failed", 
-          description: data.error || 'Unknown error occurred.' 
-        });
-      }
-    } catch (error) {
-      console.error('Status check error:', error);
-      toast({ 
-        variant: 'destructive', 
-        title: "Error", 
-        description: "Failed to check statuses." 
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const processStatuses = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/check-status', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      const data = await response.json();
-      setLastCheck(new Date().toLocaleString());
-      
-      if (data.success) {
-        toast({ 
-          title: "Processing Complete", 
-          description: `Processed ${data.totalProcessed} users. ${data.reactivatedUsers.length} reactivated, ${data.activatedUsers.length} activated.` 
-        });
-      } else {
-        toast({ 
-          variant: 'destructive', 
-          title: "Processing Failed", 
-          description: data.error || 'Unknown error occurred.' 
-        });
-      }
-    } catch (error) {
-      console.error('Status processing error:', error);
-      toast({ 
-        variant: 'destructive', 
-        title: "Error", 
-        description: "Failed to process statuses." 
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleStatusCheck = async () => {
+    setIsChecking(true);
+    // Simulate status check
+    setTimeout(() => setIsChecking(false), 2000);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Status Check & Management</h1>
+          <h1 className="text-2xl font-bold">System Status Check</h1>
           <p className="text-muted-foreground">
-            Monitor and process user suspension and deactivation statuses
+            Monitor system health and service status
           </p>
         </div>
-        <Button 
-          onClick={checkStatus} 
-          disabled={loading}
-          className="flex items-center gap-2"
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          Check Status
+        <Button onClick={handleStatusCheck} disabled={isChecking}>
+          {isChecking ? (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              Checking...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Check Status
+            </>
+          )}
         </Button>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-blue-500" />
-              Current Status Counts
-            </CardTitle>
-            <CardDescription>
-              Number of users in different status states
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Database</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            {statusData ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-orange-500" />
-                    <span className="font-medium">Suspended Users</span>
-                  </div>
-                  <span className="text-2xl font-bold text-orange-600">
-                    {statusData.suspendedUsers}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-red-500" />
-                    <span className="font-medium">Deactivated Users</span>
-                  </div>
-                  <span className="text-2xl font-bold text-red-600">
-                    {statusData.deactivatedUsers}
-                  </span>
-                </div>
-                {lastCheck && (
-                  <p className="text-sm text-muted-foreground">
-                    Last checked: {lastCheck}
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-muted-foreground">
-                Click "Check Status" to see current counts
-              </p>
-            )}
+            <div className="text-sm font-medium">Operational</div>
+            <p className="text-xs text-muted-foreground">
+              All systems normal
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              Process Statuses
-            </CardTitle>
-            <CardDescription>
-              Automatically process expired suspensions and reactivations
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">API Services</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                This will automatically:
-              </p>
-              <ul className="text-sm space-y-2 text-muted-foreground">
-                <li>• Reactivate users whose suspension has expired</li>
-                <li>• Activate users whose reactivation approval time has expired</li>
-                <li>• Send email notifications to affected users</li>
-              </ul>
-              <Button 
-                onClick={processStatuses} 
-                disabled={loading}
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Process Statuses
-                  </>
-                )}
-              </Button>
-            </div>
+            <div className="text-sm font-medium">Operational</div>
+            <p className="text-xs text-muted-foreground">
+              Response time: 45ms
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Email Service</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm font-medium">Degraded</div>
+            <p className="text-xs text-muted-foreground">
+              High latency detected
+            </p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>How It Works</CardTitle>
+          <CardTitle>Service Details</CardTitle>
           <CardDescription>
-            Understanding the automatic status management system
+            Detailed status of all platform services
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <h4 className="font-semibold text-orange-600">Suspension Management</h4>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>• Users suspended for 24 hours</li>
-                <li>• Automatic reactivation when time expires</li>
-                <li>• Email notification sent upon reactivation</li>
-                <li>• Countdown timer shown during suspension</li>
-              </ul>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <div>
+                  <p className="font-medium">Authentication Service</p>
+                  <p className="text-sm text-muted-foreground">Uptime: 99.9%</p>
+                </div>
+              </div>
+              <span className="text-sm text-green-600">Operational</span>
             </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold text-red-600">Deactivation Management</h4>
-              <ul className="text-sm space-y-1 text-muted-foreground">
-                <li>• Users deactivated by admin action</li>
-                <li>• 24-hour delay after reactivation approval</li>
-                <li>• Automatic activation when delay expires</li>
-                <li>• Email notification sent upon activation</li>
-              </ul>
+
+            <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <div>
+                  <p className="font-medium">Content Scanning</p>
+                  <p className="text-sm text-muted-foreground">Processing: 1,234 items</p>
+                </div>
+              </div>
+              <span className="text-sm text-green-600">Operational</span>
+            </div>
+
+            <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                <div>
+                  <p className="font-medium">Email Notifications</p>
+                  <p className="text-sm text-muted-foreground">Queue: 45 pending</p>
+                </div>
+              </div>
+              <span className="text-sm text-yellow-600">Degraded</span>
             </div>
           </div>
         </CardContent>

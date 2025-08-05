@@ -63,7 +63,7 @@ export function CreatorSidebar() {
     }
   };
 
-  // Sidebar menu items in the specified pattern
+  // Sidebar menu items - most features are now available without YouTube connection
   const menuItems = [
     { 
       href: '/dashboard/overview', 
@@ -81,7 +81,7 @@ export function CreatorSidebar() {
       href: '/dashboard/analytics', 
       label: 'Analytics', 
       icon: BarChart, 
-      requiresConnection: true
+      requiresConnection: true // Only analytics requires YouTube connection
     },
     { 
       href: '/dashboard/content', 
@@ -93,13 +93,13 @@ export function CreatorSidebar() {
       href: '/dashboard/monitoring', 
       label: 'Web Monitoring', 
       icon: ScanSearch, 
-      requiresConnection: true
+      requiresConnection: false // Monitoring is available without YouTube
     },
     { 
       href: '/dashboard/violations', 
       label: 'Violations', 
       icon: ShieldAlert, 
-      requiresConnection: true
+      requiresConnection: false // Violations are available without YouTube
     },
     { 
       href: '/dashboard/reports', 
@@ -202,7 +202,8 @@ export function CreatorSidebar() {
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
-              const isDisabled = item.requiresConnection && !canAccessYouTubeFeatures;
+              // Only disable if data is loaded and feature requires YouTube connection but user is not connected
+              const isDisabled = !isLoading && item.requiresConnection && !canAccessYouTubeFeatures;
 
               return (
                 <SidebarMenuItem key={item.href}>

@@ -195,6 +195,7 @@ export async function POST(req: Request) {
               { _id: existingSession._id },
               {
                 $set: {
+                  sessionId: sessionId, // Update with new sessionId
                   isCurrentSession: true,
                   lastActive: new Date(),
                   ipAddress: ipAddress,
@@ -212,7 +213,7 @@ export async function POST(req: Request) {
         } else {
           // Create new session for new device
           try {
-            await Session.create({
+            const newSession = await Session.create({
           user: user._id,
           sessionId,
           device: deviceInfo.device,
@@ -222,11 +223,18 @@ export async function POST(req: Request) {
           ipAddress,
               location: locationString,
           isCurrentSession: true,
+          isActive: true, // Explicitly set as active
           lastActive: new Date(),
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
         });
         
             console.log(`✅ New session created for user ${email} on device: ${deviceInfo.device} (${deviceInfo.browser} on ${deviceInfo.os}) at ${locationString}`);
+            console.log(`✅ Session details:`, {
+              sessionId: newSession.sessionId,
+              userId: newSession.user,
+              isActive: newSession.isActive,
+              expiresAt: newSession.expiresAt
+            });
           } catch (createError) {
             console.error('❌ Failed to create new session:', createError);
             // Set isNewDevice to false to avoid sending notifications for failed sessions
